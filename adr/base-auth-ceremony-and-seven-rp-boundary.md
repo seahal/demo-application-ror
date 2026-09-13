@@ -85,3 +85,7 @@ and surface roles. Live registries, routes, and docs must converge on it.
 - Conflicting active ADR statements above are historical where superseded; Jump JWKS on Auth
   remains.
 - Preserve Google/Apple/Entra callback contracts, Core/Side/Edit dashboards, and global `/oauth`.
+
+## Implementation progress
+
+See `evidence/2026-09-13-auth-boundary-consolidation.md` for phase SHAs and remaining gaps.
