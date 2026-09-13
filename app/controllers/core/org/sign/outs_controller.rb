@@ -18,6 +18,10 @@ module Core
 
         after_action :sign_out_notice_cache_headers!, only: %i(show edit)
 
+        def show
+          complete_oidc_rp_logout!
+        end
+
         def new
           redirect_to(sign_out_edit_path, status: :see_other)
         end
@@ -26,13 +30,9 @@ module Core
           render "auth/shared/sign_outs/edit"
         end
 
-        def show
-          complete_oidc_rp_logout!
-        end
-
         def create
           launch_oidc_rp_logout!(
-            client_id: "core-next-rp",
+            client_id: "core-org",
             issuer_resource_type: "operator",
             token_issuer: "operator",
           )

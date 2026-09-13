@@ -1,14 +1,16 @@
 # typed: false
 # frozen_string_literal: true
 
-module Core
-  module Com
+module Edit
+  module Org
     module Oidc
       module Backchannel
         class LogoutsController < ActionController::API
           include ::OidcRpLogoutReceiver
 
           AUTHENTICATION_MODE = :bare
+
+          public
 
           def create
             handle_oidc_backchannel_logout
@@ -17,7 +19,7 @@ module Core
           private
 
           def oidc_client_id
-            "core-com"
+            "edit-org"
           end
         end
       end

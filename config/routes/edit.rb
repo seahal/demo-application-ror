@@ -30,6 +30,24 @@ scope module: :edit, as: :edit do
         end
       end
 
+      # Independent edit-org first-party RP entrypoints.
+      namespace :oidc do
+        resource :authorization, only: :show
+        resource :callback, only: :show
+        namespace :backchannel do
+          resource :logout, only: :create
+        end
+      end
+
+      scope path: "sign", as: :sign do
+        get "in", to: "oidc/authorizations#show", as: :in
+        get "in/callback", to: "oidc/callbacks#show", as: :in_callback
+      end
+
+      namespace :sign do
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
+      end
+
       # Staff Publishing CMS. Twelve explicit surface/audience cells (no route loops).
       # Locale is not a path segment; each cell maps Editions for that surface+audience.
       resource :publishing, only: [], module: :publishing do

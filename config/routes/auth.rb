@@ -60,14 +60,7 @@ scope(module: :auth, as: :auth) do
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-
-        namespace(:backchannel) do
-          resource(:logout, only: :create)
-        end
-      end
+      # Auth is ceremony-only: no OIDC RP callback/authorization/backchannel routes.
 
       # Public web API: OTP delivery, cookie consent, theme.
       namespace :web do
@@ -282,14 +275,7 @@ scope(module: :auth, as: :auth) do
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-
-        namespace(:backchannel) do
-          resource(:logout, only: :create)
-        end
-      end
+      # Auth is ceremony-only: no OIDC RP callback/authorization/backchannel routes.
 
       # Public web API: OTP delivery, cookie consent, theme.
       namespace :web do
@@ -454,14 +440,7 @@ scope(module: :auth, as: :auth) do
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-
-        namespace(:backchannel) do
-          resource(:logout, only: :create)
-        end
-      end
+      # Auth is ceremony-only: no OIDC RP callback/authorization/backchannel routes.
 
       # Public web API: cookie consent, theme.
       namespace :web do

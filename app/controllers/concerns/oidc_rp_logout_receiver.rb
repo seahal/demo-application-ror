@@ -31,6 +31,8 @@ module OidcRpLogoutReceiver
   end
 
   def oidc_rp_logout_client_id
-    self.class.name.start_with?("Core::") ? "core-next-rp" : "sign-rp"
+    return oidc_client_id if respond_to?(:oidc_client_id, true)
+
+    raise NotImplementedError, "#{self.class.name} must define oidc_client_id for backchannel logout"
   end
 end

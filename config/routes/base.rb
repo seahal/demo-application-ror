@@ -92,14 +92,10 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                 only: %i(show new edit create destroy)
+                               only: %i(show new edit create destroy)
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-        resource(:logout, only: %i(show create))
-      end
+      # Base is the AS/IdP only: no first-party browser RP callback routes.
 
       # OAuth/OIDC protocol endpoints. Paths are fixed by RFC 6749/7009 and
       # OIDC Core; resource names stay nouns.
@@ -327,14 +323,10 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                 only: %i(show new edit create destroy)
+                               only: %i(show new edit create destroy)
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-        resource(:logout, only: %i(show create))
-      end
+      # Base is the AS/IdP only: no first-party browser RP callback routes.
 
       # OAuth/OIDC protocol endpoints. Paths are fixed by RFC 6749/7009 and
       # OIDC Core; resource names stay nouns.
@@ -540,14 +532,10 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                 only: %i(show new edit create destroy)
+                               only: %i(show new edit create destroy)
       end
 
-      namespace(:oidc) do
-        resource(:authorization, only: :show)
-        resource(:callback, only: :show)
-        resource(:logout, only: %i(show create))
-      end
+      # Base is the AS/IdP only: no first-party browser RP callback routes.
 
       # OAuth/OIDC protocol endpoints. Paths are fixed by RFC 6749/7009 and
       # OIDC Core; resource names stay nouns.

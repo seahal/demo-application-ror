@@ -67,7 +67,14 @@ scope module: :side, as: :side do
       resource :dashboard, only: :show
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
+      scope path: "sign", as: :sign do
+        get "in", to: "oidc/authorizations#show", as: :in
+        get "in/callback", to: "oidc/callbacks#show", as: :in_callback
+      end
+
       namespace :sign do
+        # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
+
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
@@ -154,7 +161,14 @@ scope module: :side, as: :side do
       resource :dashboard, only: :show
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
+      scope path: "sign", as: :sign do
+        get "in", to: "oidc/authorizations#show", as: :in
+        get "in/callback", to: "oidc/callbacks#show", as: :in_callback
+      end
+
       namespace :sign do
+        # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
+
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
@@ -240,7 +254,14 @@ scope module: :side, as: :side do
       resource :dashboard, only: :show
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
+      scope path: "sign", as: :sign do
+        get "in", to: "oidc/authorizations#show", as: :in
+        get "in/callback", to: "oidc/callbacks#show", as: :in_callback
+      end
+
       namespace :sign do
+        # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
+
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 

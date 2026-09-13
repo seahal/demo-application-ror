@@ -83,7 +83,7 @@ module Edit
       end
 
       def oidc_client_id
-        "base-rails-rp"
+        "edit-org"
       end
 
       def oidc_sign_host

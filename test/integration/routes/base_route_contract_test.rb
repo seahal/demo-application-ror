@@ -120,21 +120,19 @@ class BaseRouteContractTest < ActionDispatch::IntegrationTest
       assert_equal "base/app/dashboards", recognized[:controller]
       assert_equal "show", recognized[:action]
 
-      recognized = Rails.application.routes.recognize_path(
-        "http://#{host}/oidc/authorization",
-        method: :get,
-      )
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path(
+          "http://#{host}/oidc/authorization",
+          method: :get,
+        )
+      end
 
-      assert_equal "base/app/oidc/authorizations", recognized[:controller]
-      assert_equal "show", recognized[:action]
-
-      recognized = Rails.application.routes.recognize_path(
-        "http://#{host}/oidc/callback",
-        method: :get,
-      )
-
-      assert_equal "base/app/oidc/callbacks", recognized[:controller]
-      assert_equal "show", recognized[:action]
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path(
+          "http://#{host}/oidc/callback",
+          method: :get,
+        )
+      end
 
       recognized = Rails.application.routes.recognize_path(
         "http://#{host}/oauth/authorize",
@@ -168,13 +166,12 @@ class BaseRouteContractTest < ActionDispatch::IntegrationTest
       assert_equal "base/app/oauth/revocations", recognized[:controller]
       assert_equal "create", recognized[:action]
 
-      recognized = Rails.application.routes.recognize_path(
-        "http://#{host}/oidc/logout",
-        method: :get,
-      )
-
-      assert_equal "base/app/oidc/logouts", recognized[:controller]
-      assert_equal "show", recognized[:action]
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path(
+          "http://#{host}/oidc/logout",
+          method: :get,
+        )
+      end
 
       assert_raises(ActionController::RoutingError) do
         Rails.application.routes.recognize_path("http://#{host}/oidc", method: :get)
@@ -289,21 +286,19 @@ class BaseRouteContractTest < ActionDispatch::IntegrationTest
     assert_equal "base/com/dashboards", recognized[:controller]
     assert_equal "show", recognized[:action]
 
-    recognized = Rails.application.routes.recognize_path(
-      "http://#{BASE_COM_HOST}/oidc/authorization",
-      method: :get,
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_COM_HOST}/oidc/authorization",
+        method: :get,
+      )
+    end
 
-    assert_equal "base/com/oidc/authorizations", recognized[:controller]
-    assert_equal "show", recognized[:action]
-
-    recognized = Rails.application.routes.recognize_path(
-      "http://#{BASE_COM_HOST}/oidc/callback",
-      method: :get,
-    )
-
-    assert_equal "base/com/oidc/callbacks", recognized[:controller]
-    assert_equal "show", recognized[:action]
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_COM_HOST}/oidc/callback",
+        method: :get,
+      )
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{BASE_COM_HOST}/oidc", method: :get)
@@ -425,21 +420,19 @@ class BaseRouteContractTest < ActionDispatch::IntegrationTest
     assert_equal "base/org/dashboards", recognized[:controller]
     assert_equal "show", recognized[:action]
 
-    recognized = Rails.application.routes.recognize_path(
-      "http://#{BASE_ORG_HOST}/oidc/authorization",
-      method: :get,
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_ORG_HOST}/oidc/authorization",
+        method: :get,
+      )
+    end
 
-    assert_equal "base/org/oidc/authorizations", recognized[:controller]
-    assert_equal "show", recognized[:action]
-
-    recognized = Rails.application.routes.recognize_path(
-      "http://#{BASE_ORG_HOST}/oidc/callback",
-      method: :get,
-    )
-
-    assert_equal "base/org/oidc/callbacks", recognized[:controller]
-    assert_equal "show", recognized[:action]
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_ORG_HOST}/oidc/callback",
+        method: :get,
+      )
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{BASE_ORG_HOST}/oidc", method: :get)

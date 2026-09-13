@@ -1,22 +1,25 @@
 # typed: false
 # frozen_string_literal: true
 
-module Core
-  module Com
+module Edit
+  module Org
     module Sign
-      class OutsController < Core::Com::ApplicationController
+      class OutsController < Edit::Org::BareController
+        include ::AuthenticationClient
         include ::AuthenticationLogoutable
         include ::SignOutNotice
         include ::OidcRpLogoutLauncher
 
         AUTHENTICATION_MODE = :open
-        declare_authentication_mode! :open
+        layout "edit/org/application"
 
         before_action :authenticate!, only: :create
         helper_method :sign_out_completed_description
         helper_method :sign_out_confirmation_form_path
 
         after_action :sign_out_notice_cache_headers!, only: %i(show edit)
+
+        public
 
         def show
           complete_oidc_rp_logout!
@@ -32,9 +35,9 @@ module Core
 
         def create
           launch_oidc_rp_logout!(
-            client_id: "core-com",
-            issuer_resource_type: "visitor",
-            token_issuer: "visitor",
+            client_id: "edit-org",
+            issuer_resource_type: "operator",
+            token_issuer: "operator",
           )
         end
 
