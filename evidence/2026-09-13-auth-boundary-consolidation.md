@@ -1,7 +1,7 @@
 # Auth-boundary consolidation evidence (2026-09-13 JST)
 
 Branch: `feature`  
-Head at evidence write: `30e833fd4` (continuation after leftover RP-route and SIDE JWT slices).
+Head at evidence write: updated after leftover Auth/sign-rp + admission/sign-out contract slice.
 
 ## Environment
 
@@ -86,6 +86,26 @@ green. Pre-push `bun run test:coverage`: 86 files, 1075 tests; stmts 99.82%, bra
    re-validated; host Postgres + Valkey used. Compose contract tests still expect `valkey-cache`.
 5. **SIDE surface JWT** (`JWT_SIDE_*` / `SURFACE_NAMESPACES`) was not added. Only OIDC client
    assertion namespaces (`OIDC_CLIENT_SIDE_*`) were wired, matching the existing CORE/EDIT pattern.
+
+## Continuation 2026-09-14 early morning (JST)
+
+Retargeted leftover Auth/`sign-rp` backchannel and post-admission ceremony contracts on `feature`:
+
+- `OidcRpLogoutReceiversTest` now covers routed first-party receivers only (`core-app` / `core-com`
+  / `core-org` / `edit-org`). Auth ceremony hosts stay unrouted for RP backchannel.
+- Sign-up suspension open/unaffected cases redeem Base opaque admission before asserting 2xx.
+- Sign-out completion destinations assert `/sign/out` (not `/lobby` or `/sign/out/complete`).
+- CSRF protocol-exception coverage uses Core backchannel instead of retired Auth helper.
+- Auth settings SSO browser-flow hits literal `/oidc/callback` (helper retired; 404 early-return).
+- Flat Ruby mapping inventory falls back to `git grep` when sandbox filters system `rg`.
+
+Focused verification: `136 runs, 1062 assertions, 0 failures, 0 errors` across receivers,
+suspension, Auth/Base/Palm sign-out, CSRF, client registry, Core route contract, and mapping.
+
+Full Rails suite not yet re-run after this slice; previous full-suite baseline remains `ddbc49c04`
+(`51` failures / `56` errors). Shared browser clients (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
+`core-next-rp`) still registered; Auth still hardcodes `sign-rp` for RP logout launch /
+`oidc_client_id`.
 
 ## Conclusion
 
