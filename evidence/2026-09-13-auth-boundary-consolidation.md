@@ -76,10 +76,10 @@ green. Pre-push `bun run test:coverage`: 86 files, 1075 tests; stmts 99.82%, bra
 1. **Shared browser clients still registered** (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
    `core-next-rp`). Auth still hardcodes `sign-rp`; Base still hardcodes `base-rails-rp`. Do not
    remove the four IDs until those surfaces stop depending on them. Native/content clients stay.
-2. **Full Rails suite is still red** at `ddbc49c04` (`51` failures / `56` errors). Largest remaining
+2. **Full Rails suite is still red** at `15a033bb7` (`31` failures / `54` errors). Largest remaining
    clusters: Edit Publishing `publishing_management_namespace` (~31 errors), compose `valkey-cache`,
-   OIDC RP logout receivers (Auth leftover `sign-rp` / 404), sign-up suspension, Auth ceremony
-   leftover contracts, inventory/forbidden-pattern/`rg` mapping.
+   leftover ceremony/admission social entry, stale `/dashboard` assertions, flat-ruby/architecture
+   baseline drift, Auth still hardcoding `sign-rp`.
 3. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
    ceremony controllers not yet migrated onto opaque handoff/result + Base admission.
 4. **Compose full stack** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
@@ -102,10 +102,14 @@ Retargeted leftover Auth/`sign-rp` backchannel and post-admission ceremony contr
 Focused verification: `136 runs, 1062 assertions, 0 failures, 0 errors` across receivers,
 suspension, Auth/Base/Palm sign-out, CSRF, client registry, Core route contract, and mapping.
 
-Full Rails suite not yet re-run after this slice; previous full-suite baseline remains `ddbc49c04`
-(`51` failures / `56` errors). Shared browser clients (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
-`core-next-rp`) still registered; Auth still hardcodes `sign-rp` for RP logout launch /
-`oidc_client_id`.
+Full `bundle exec rails test` at `15a033bb7` (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`, ended
+2026-09-14 01:18 JST): `12981 runs, 78465 assertions, 31 failures, 54 errors, 2 skips` in 670s. Down
+from `ddbc49c04` (`51` failures / `56` errors). Pre-push frontend-check held.
+
+Largest remaining clusters: Edit Publishing `publishing_management_namespace` (~31 errors), compose
+`valkey-cache` (~6), leftover ceremony/admission social entry, stale `/dashboard` assertions,
+flat-ruby/architecture baseline drift. Shared browser clients still registered; Auth still hardcodes
+`sign-rp` for RP logout launch / `oidc_client_id`.
 
 ## Conclusion
 
