@@ -27,4 +27,23 @@ module BaseSignOutDestination
   def sign_out_finished_route_params
     { ri: sign_out_route_params[:ri] }.compact
   end
+
+  def render_oidc_end_session_confirmation
+    @sign_out_notice = consume_sign_out_notice
+    props = sign_out_edit_page_props
+    if @sign_out_notice.present?
+      props = props.merge(
+        notice: { title: I18n.t("sign.shared.sign_out.completed_title") },
+        description: sign_out_completed_description,
+      )
+    end
+    render inertia: "#{controller_path}/edit",
+           props: props,
+           status: :ok,
+           clear_history: @sign_out_notice.present?
+  end
+
+  def render_oidc_logout_completion
+    render_oidc_end_session_confirmation
+  end
 end

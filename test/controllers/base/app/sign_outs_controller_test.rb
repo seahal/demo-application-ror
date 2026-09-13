@@ -54,7 +54,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     get response.location
 
     assert_response :success
-    assert_equal "base/app/lobbies/show", inertia_component
+    assert_equal "base/app/sign_outs/edit", inertia_component
     assert_equal I18n.t("sign.shared.sign_out.completed_title"), inertia_props.fetch("notice").fetch("title")
 
     get base_app_sign_out_url(host: @host, ri: "jp")
@@ -75,12 +75,12 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert inertia_page.fetch("clearHistory"),
-           "the lobby after sign-out must carry clearHistory so Back cannot restore a signed-in page"
+           "the /sign/out page after sign-out must carry clearHistory so Back cannot restore a signed-in page"
   end
 
   # The flag is consumed by the render that follows sign-out. A later page must not keep clearing
   # history, which would discard the signed-out visitor's ordinary navigation state.
-  test "clear history is not repeated on the page after the sign out lobby" do
+  test "clear history is not repeated on the page after the sign-out completion" do
     token = ClientToken.create!(user: @user, user_token_kind_id: ClientTokenKind::BROWSER_WEB)
     cookies[AuthenticationBase::REFRESH_COOKIE_KEY] = token.rotate_refresh_token!
 
@@ -92,7 +92,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     assert_not inertia_page.fetch("clearHistory")
   end
 
-  test "post sign out without a resolved session redirects to the lobby" do
+  test "post sign out without a resolved session completes on /sign/out" do
     post base_app_sign_out_url(host: @host, ri: "jp")
 
     assert_response :see_other
@@ -101,7 +101,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     get response.location
 
     assert_response :success
-    assert_equal "base/app/lobbies/show", inertia_component
+    assert_equal "base/app/sign_outs/edit", inertia_component
     assert_nil inertia_props["notice"]
   end
 

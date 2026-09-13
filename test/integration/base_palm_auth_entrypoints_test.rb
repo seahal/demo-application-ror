@@ -85,26 +85,25 @@ class BasePalmAuthEntrypointsTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # The base roots no longer render a sign up entry point: they canonicalize to the regional root,
-  # which owns the entry point. Palm still serves its own.
-  test "base roots canonicalize to the regional root and palm root exposes sign up links" do
+  # Base Root is the control-plane home. Palm still serves native sign-up links.
+  test "base roots render the control-plane home and palm root exposes sign up links" do
     host! BASE_APP_HOST
     get "/", params: { ri: "jp" }
 
-    assert_response :moved_permanently
-    assert_equal "https://jp.umaxica.app/", response.location
+    assert_response :success
+    assert_equal "base/app/roots/index", inertia_component
 
     host! BASE_COM_HOST
     get "/", params: { ri: "jp" }
 
-    assert_response :moved_permanently
-    assert_equal "https://jp.umaxica.com/", response.location
+    assert_response :success
+    assert_equal "base/com/roots/index", inertia_component
 
     host! BASE_ORG_HOST
     get "/", params: { ri: "jp" }
 
-    assert_response :moved_permanently
-    assert_equal "https://jp.umaxica.org/", response.location
+    assert_response :success
+    assert_equal "base/org/roots/index", inertia_component
 
     # Palm renders regional HTML, so its root owes the same `ri` contract as the other HTML
     # surfaces: a request without a region is redirected to the canonical URL that carries one,

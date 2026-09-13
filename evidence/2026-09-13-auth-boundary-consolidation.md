@@ -64,15 +64,18 @@ Gates held.
 Full `bundle exec rails test` (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`):  
 `12989 runs, 78152 assertions, 115 failures, 67 errors, 2 skips` in 636s. Not green.
 
+Focused leftover Root/RP/sign-out suite after this slice: `120 runs, 688 assertions, 0 failures` (1
+skip: issue #846 session-limit handoff).
+
 ## Remaining gaps vs plan completion conditions
 
 1. **Shared browser clients still registered** (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
    `core-next-rp`). Auth still hardcodes `sign-rp`; Base still hardcodes `base-rails-rp`. Do not
    remove the four IDs until those surfaces stop depending on them. Native/content clients stay.
-2. **Full Rails suite is red:** 115 failures / 67 errors. Largest clusters: Edit Publishing
-   `publishing_management_namespace` (`docsentries_controller` autoload), compose `valkey-cache`
-   missing, leftover Base RP browser-flow tests, Root/dashboard/lobby stale assertions, sign-out
-   lobby templates.
+2. **Full Rails suite is still red** as of `06ed9b64a` (`115` failures / `67` errors). This slice
+   retargets leftover Root 301/lobby/Base-RP assertions and wires Base GET `/sign/out` to Inertia.
+   Remaining clusters: Edit Publishing `publishing_management_namespace`, compose `valkey-cache`,
+   Auth/Base ceremony leftovers, inventory/forbidden-pattern contracts.
 3. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
    ceremony controllers not yet migrated onto opaque handoff/result + Base admission.
 4. **Compose full stack** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
