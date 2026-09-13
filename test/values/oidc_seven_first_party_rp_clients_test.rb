@@ -26,6 +26,16 @@ class OidcSevenFirstPartyRpClientsTest < ActiveSupport::TestCase
       )
     end
 
+    namespaces =
+      AuthBoundaryAuthorityMap.first_party_rp_client_ids.map do |client_id|
+        OidcClientRegistry.find!(client_id).jwt_namespace
+      end
+
+    assert_equal 7, namespaces.uniq.size
+    assert_equal(
+      %w(CORE_APP CORE_COM CORE_ORG SIDE_APP SIDE_COM SIDE_ORG EDIT_ORG),
+      namespaces,
+    )
     assert_equal 7, AuthBoundaryAuthorityMap.first_party_rp_client_ids.size
     assert_predicate AuthBoundaryAuthorityMap, :unique_client_ids?
     assert_predicate AuthBoundaryAuthorityMap, :no_overlap_with_deprecated_ids?

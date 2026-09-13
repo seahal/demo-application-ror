@@ -47,7 +47,7 @@ module OidcClientStoresStaticClientStore
       resource_type: "client",
       aud: "side-app",
       name: "Side App RP",
-      jwt_namespace: "BASE_APP",
+      jwt_namespace: "SIDE_APP",
     },
     "side-com" => {
       env_key: "SIDE_CORPORATE_URL",
@@ -55,7 +55,7 @@ module OidcClientStoresStaticClientStore
       resource_type: "visitor",
       aud: "side-com",
       name: "Side Com RP",
-      jwt_namespace: "BASE_COM",
+      jwt_namespace: "SIDE_COM",
     },
     "side-org" => {
       env_key: "SIDE_STAFF_URL",
@@ -63,7 +63,7 @@ module OidcClientStoresStaticClientStore
       resource_type: "operator",
       aud: "side-org",
       name: "Side Org RP",
-      jwt_namespace: "BASE_ORG",
+      jwt_namespace: "SIDE_ORG",
     },
     "edit-org" => {
       env_key: "PUBLIC_EDIT_STAFF_URL",
