@@ -41,6 +41,7 @@ gem "pg_search"
 gem "rails-pg-extras", require: false
 # Redis client.
 gem "redis"
+gem "hiredis-client"
 # HTTP client for hand-written outbound requests. Already resolved transitively
 # through the OIDC and OAuth gem chain; declared here because application code
 # depends on it directly via OutboundHttp::Connection.

@@ -9,10 +9,8 @@ services:
     container_name: global-devcontainer-primary
   replica:
     container_name: global-devcontainer-replica
-  valkey-cache:
-    container_name: global-devcontainer-valkey-cache
-  valkey-rate-limit:
-    container_name: global-devcontainer-valkey-rate-limit
+  valkey:
+    container_name: global-devcontainer-valkey
   loki:
     container_name: global-devcontainer-loki
   tempo:

@@ -208,9 +208,7 @@ services:
         condition: service_healthy
       replica:
         condition: service_started
-      valkey-cache:
-        condition: service_healthy
-      valkey-rate-limit:
+      valkey:
         condition: service_healthy
 volumes:
   umaxica-home-cache: {}

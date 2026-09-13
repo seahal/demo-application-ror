@@ -2,7 +2,8 @@
 
 > **Topology supersession (2026-09-13):** Development/test Valkey consolidates to one service with
 > logical DBs 0–5 and `AUTH_STATE_REDIS_URL`. Cache/rate-limit semantics and Solid Queue are
-> unchanged. See `adr/base-auth-ceremony-and-seven-rp-boundary.md`.
+> unchanged. See `adr/base-auth-ceremony-and-seven-rp-boundary.md` and
+> `adr/valkey-nonprod-logical-db-topology.md`.
 
 ## Status
 

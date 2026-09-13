@@ -17,12 +17,16 @@ module Valkey
         refresh_family_ref issued_at expires_at consumed_at
       ).freeze
 
-      ConsumeResult = Data.define(:status, :payload) do
-        def success? = status == :consumed
-        def replay? = status == :replay
-        def missing? = status == :missing
-        def mismatch? = status == :mismatch
-      end
+      ConsumeResult =
+        Data.define(:status, :payload) do
+          def success? = status == :consumed
+
+          def replay? = status == :replay
+
+          def missing? = status == :missing
+
+          def mismatch? = status == :mismatch
+        end
 
       CONSUME_SCRIPT = <<~LUA.freeze
         local current = redis.call("GET", KEYS[1])
@@ -52,6 +56,8 @@ module Valkey
         redis.call("SET", KEYS[1], cjson.encode(payload), "XX", "EX", ttl)
         return {"consumed", cjson.encode(payload)}
       LUA
+
+      public
 
       def initialize(connection: default_connection)
         @connection = connection
@@ -84,7 +90,7 @@ module Valkey
         encoded = encode_payload(payload)
         key = storage_key(raw_code)
         stored = @connection.call("SET", key, encoded, "NX", "EX", ttl.to_i)
-        raise OperationError, "authorization code key collision" unless stored == "OK"
+        raise Umaxica::Valkey::OperationError, "authorization code key collision" unless stored == "OK"
 
         raw_code
       rescue Redis::BaseError, IOError, SystemCallError => e
@@ -107,11 +113,12 @@ module Valkey
         )
         status = result.is_a?(Array) ? result[0].to_s : "corrupt"
         payload = parse_payload(result.is_a?(Array) ? result[1] : nil)
-        return ConsumeResult.new(status: status.to_sym, payload: payload) if %w(consumed replay missing mismatch).include?(status)
+        return ConsumeResult.new(status: status.to_sym, payload: payload) if %w(consumed replay missing
+                                                                                mismatch).include?(status)
 
-        raise SerializationError, "authorization code payload is corrupt" if status == "corrupt"
+        raise Umaxica::Valkey::SerializationError, "authorization code payload is corrupt" if status == "corrupt"
 
-        raise OperationError, "unexpected authorization code status"
+        raise Umaxica::Valkey::OperationError, "unexpected authorization code status"
       rescue Redis::BaseError, IOError, SystemCallError => e
         raise Umaxica::Valkey::Unavailable, "Valkey authorization code consume unavailable", cause: e
       end
@@ -141,27 +148,30 @@ module Valkey
 
       def encode_payload(payload)
         unknown = payload.keys.map(&:to_s) - FIELDS
-        raise SerializationError, "authorization code payload has unknown fields" if unknown.any?
+        raise Umaxica::Valkey::SerializationError, "authorization code payload has unknown fields" if unknown.any?
 
         JSON.generate(payload)
       rescue JSON::GeneratorError => e
-        raise SerializationError, "authorization code payload is not serializable", cause: e
+        raise Umaxica::Valkey::SerializationError, "authorization code payload is not serializable", cause: e
       end
 
       def parse_payload(encoded)
         return nil if encoded.to_s.blank?
 
         payload = JSON.parse(encoded)
-        raise SerializationError, "authorization code payload must be an object" unless payload.is_a?(Hash)
-        raise SerializationError, "authorization code payload version mismatch" unless payload["version"] == VERSION
-        raise SerializationError, "authorization code payload state invalid" unless STATES.include?(payload["state"])
+        raise Umaxica::Valkey::SerializationError,
+              "authorization code payload must be an object" unless payload.is_a?(Hash)
+        raise Umaxica::Valkey::SerializationError,
+              "authorization code payload version mismatch" unless payload["version"] == VERSION
+        raise Umaxica::Valkey::SerializationError,
+              "authorization code payload state invalid" unless STATES.include?(payload["state"])
 
         unknown = payload.keys - FIELDS
-        raise SerializationError, "authorization code payload has unknown fields" if unknown.any?
+        raise Umaxica::Valkey::SerializationError, "authorization code payload has unknown fields" if unknown.any?
 
         payload
       rescue JSON::ParserError => e
-        raise SerializationError, "authorization code payload is corrupt", cause: e
+        raise Umaxica::Valkey::SerializationError, "authorization code payload is corrupt", cause: e
       end
     end
   end

@@ -307,3 +307,5 @@ Repository / application boundary decisions:
 Historical engine-era ADRs are retained for traceability only. They do not authorize reintroducing
 `engines/`, wrapper apps under `apps/<name>`, `Jit::<EngineName>` namespaces, or `isolate_namespace`
 boundaries in this repository.
+
+- `valkey-nonprod-logical-db-topology.md` — one nonprod Valkey, DBs 0–5, AUTH_STATE_REDIS_URL.

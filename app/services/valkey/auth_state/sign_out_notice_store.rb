@@ -19,6 +19,8 @@ module Valkey
         return value or ""
       LUA
 
+      public
+
       def initialize(connection: default_connection)
         @connection = connection
       end
@@ -44,11 +46,12 @@ module Valkey
       end
 
       def read(raw_id:, now: Time.current, delete: false)
-        encoded = if delete
-          @connection.call("EVAL", GETDEL_SCRIPT, 1, storage_key(raw_id))
-        else
-          @connection.call("GET", storage_key(raw_id))
-        end
+        encoded =
+          if delete
+            @connection.call("EVAL", GETDEL_SCRIPT, 1, storage_key(raw_id))
+          else
+            @connection.call("GET", storage_key(raw_id))
+          end
         return nil if encoded.to_s.blank?
 
         payload = parse_payload(encoded)
@@ -93,8 +96,10 @@ module Valkey
 
       def parse_payload(encoded)
         payload = JSON.parse(encoded)
-        raise Umaxica::Valkey::SerializationError, "sign-out notice payload must be an object" unless payload.is_a?(Hash)
-        raise Umaxica::Valkey::SerializationError, "sign-out notice version mismatch" unless payload["version"] == VERSION
+        raise Umaxica::Valkey::SerializationError,
+              "sign-out notice payload must be an object" unless payload.is_a?(Hash)
+        raise Umaxica::Valkey::SerializationError,
+              "sign-out notice version mismatch" unless payload["version"] == VERSION
 
         unknown = payload.keys - FIELDS
         raise Umaxica::Valkey::SerializationError, "sign-out notice payload has unknown fields" if unknown.any?

@@ -217,62 +217,19 @@ services:
       retries: 30
       start_period: 10s
   # Disposable, reconstructible application cache (Rails.cache). Every entry
-  # carries an explicit TTL; flushing this service must never change application
-  # correctness, and must not touch rate-limit counters.
-  valkey-cache:
-    container_name: global-devcontainer-valkey-cache
+  # One nonprod Valkey: logical DBs 0/1/2 (dev cache/rate/auth-state) and
+  # 3/4/5 (test). Responsibility URLs remain mandatory; logical DBs are not a
+  # security boundary (see adr/valkey-nonprod-logical-db-topology.md).
+  valkey:
+    container_name: global-devcontainer-valkey
     image: docker.io/valkey/valkey:8.0-alpine3.22
     networks:
       - backend
-    # Host-native Rails reaches cache through loopback.
     ports:
-      - "127.0.0.1:${VALKEY_CACHE_HOST_PORT:-6379}:6379"
+      - "127.0.0.1:${VALKEY_HOST_PORT:-6379}:6379"
     volumes:
-      - valkey-cache-volume:/data
-    # Bounded on purpose. Podman applies no backoff to a restart policy, so a service that
-    # exits immediately on a bad configuration is recreated several times a second until
-    # the netns, veth, conmon, and journald churn saturates a CPU. Five attempts ride out
-    # a transient failure and leave a real misconfiguration stopped and visible.
+      - valkey-volume:/data
     restart: on-failure:5
-    # journald enforces no per-container size cap, and a restart loop writes the same
-    # startup failure thousands of times, so a capped json-file driver is what actually
-    # bounds the disk cost of a bad configuration. Container output no longer reaches
-    # `journalctl`; read it with `podman logs`, which serves either driver.
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test:
-        - CMD
-        - valkey-cli
-        - ping
-      interval: 3s
-      timeout: 2s
-      retries: 20
-      start_period: 3s
-  # Distributed rate-limit counters, TTL-bound to the rate-limit window. Kept in
-  # its own service so cache maintenance can never reset abuse protection.
-  valkey-rate-limit:
-    container_name: global-devcontainer-valkey-rate-limit
-    image: docker.io/valkey/valkey:8.0-alpine3.22
-    networks:
-      - backend
-    # Host-native Rails reaches rate limits through loopback.
-    ports:
-      - "127.0.0.1:${VALKEY_RATE_LIMIT_HOST_PORT:-6380}:6379"
-    volumes:
-      - valkey-rate-limit-volume:/data
-    # Bounded on purpose. Podman applies no backoff to a restart policy, so a service that
-    # exits immediately on a bad configuration is recreated several times a second until
-    # the netns, veth, conmon, and journald churn saturates a CPU. Five attempts ride out
-    # a transient failure and leave a real misconfiguration stopped and visible.
-    restart: on-failure:5
-    # journald enforces no per-container size cap, and a restart loop writes the same
-    # startup failure thousands of times, so a capped json-file driver is what actually
-    # bounds the disk cost of a bad configuration. Container output no longer reaches
-    # `journalctl`; read it with `podman logs`, which serves either driver.
     logging:
       driver: json-file
       options:
@@ -571,8 +528,7 @@ volumes:
   fakecloud-data: {}
   primary-data: {}
   replica-data: {}
-  valkey-cache-volume: {}
-  valkey-rate-limit-volume: {}
+  valkey-volume: {}
   alloy-volume: {}
   loki-volume: {}
   tempo-volume: {}
