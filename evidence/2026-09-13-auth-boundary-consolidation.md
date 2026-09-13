@@ -61,21 +61,25 @@ SIDE/Core first-party focused suite: `78 runs, 654 assertions, 0 failures`.
 Pre-push `bun run test:coverage`: 86 files, 1075 tests; stmts 99.82%, branches 99.71%, lines 99.81%.
 Gates held.
 
-Full `bundle exec rails test` (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`):  
-`12989 runs, 78152 assertions, 115 failures, 67 errors, 2 skips` in 636s. Not green.
+Earlier full suite at `06ed9b64a`: `12989 runs, 78152 assertions, 115 failures, 67 errors, 2 skips`.
 
-Focused leftover Root/RP/sign-out suite after this slice: `120 runs, 688 assertions, 0 failures` (1
-skip: issue #846 session-limit handoff).
+Focused leftover Root/RP/sign-out suite: `120 runs, 688 assertions, 0 failures` (1 skip: issue
+#846).
+
+Full `bundle exec rails test` at `ddbc49c04` (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`, ended
+2026-09-14 00:54 JST): `12981 runs, 78344 assertions, 51 failures, 56 errors, 2 skips` in 631s. Not
+green. Pre-push `bun run test:coverage`: 86 files, 1075 tests; stmts 99.82%, branches 99.71%, lines
+99.81%. Gates held.
 
 ## Remaining gaps vs plan completion conditions
 
 1. **Shared browser clients still registered** (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
    `core-next-rp`). Auth still hardcodes `sign-rp`; Base still hardcodes `base-rails-rp`. Do not
    remove the four IDs until those surfaces stop depending on them. Native/content clients stay.
-2. **Full Rails suite is still red** as of `06ed9b64a` (`115` failures / `67` errors). This slice
-   retargets leftover Root 301/lobby/Base-RP assertions and wires Base GET `/sign/out` to Inertia.
-   Remaining clusters: Edit Publishing `publishing_management_namespace`, compose `valkey-cache`,
-   Auth/Base ceremony leftovers, inventory/forbidden-pattern contracts.
+2. **Full Rails suite is still red** at `ddbc49c04` (`51` failures / `56` errors). Largest remaining
+   clusters: Edit Publishing `publishing_management_namespace` (~31 errors), compose `valkey-cache`,
+   OIDC RP logout receivers (Auth leftover `sign-rp` / 404), sign-up suspension, Auth ceremony
+   leftover contracts, inventory/forbidden-pattern/`rg` mapping.
 3. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
    ceremony controllers not yet migrated onto opaque handoff/result + Base admission.
 4. **Compose full stack** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
