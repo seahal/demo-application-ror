@@ -1,8 +1,12 @@
 # Valkey Cache and Rate-Limit Stores; Solid Cache Removed
 
+> **Topology supersession (2026-09-13):** Development/test Valkey consolidates to one service with
+> logical DBs 0–5 and `AUTH_STATE_REDIS_URL`. Cache/rate-limit semantics and Solid Queue are
+> unchanged. See `adr/base-auth-ceremony-and-seven-rp-boundary.md`.
+
 ## Status
 
-Accepted.
+Accepted; partially superseded (2026-09-13).
 
 Supersedes the cache half of `adr/four-app-solid-cache-and-solid-queue.md` (already marked obsolete
 for the four-app split) and `adr/distributor-solid-cache-queue-placement.md` (already superseded).

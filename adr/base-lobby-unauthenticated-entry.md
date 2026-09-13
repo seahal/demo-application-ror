@@ -1,8 +1,11 @@
 # Base Lobby Unauthenticated Entry
 
+> **Supersession (2026-09-13):** Base `/lobby` and Auth/Base `/dashboard` are retired; Root owns
+> public and authenticated homes. See `adr/base-auth-ceremony-and-seven-rp-boundary.md`.
+
 ## Status
 
-Accepted (2026-09-11)
+Accepted; partially superseded (2026-09-13) (2026-09-11)
 
 Amends `adr/logout-ceremony-boundary.md` for Base completion destination only.
 
@@ -13,9 +16,9 @@ browser can open, reload, or bookmark it as if a sign-out had just happened. The
 is Post/Redirect/Get: the mutation lives on `POST /sign/out`, and the next GET is the canonical
 unauthenticated entry.
 
-Base `/` already owns regional-host redirect and the existing unauthenticated landing. That
-behavior stays. The missing named resource is a stable anonymous entry that authenticated actors
-must not see.
+Base `/` already owns regional-host redirect and the existing unauthenticated landing. That behavior
+stays. The missing named resource is a stable anonymous entry that authenticated actors must not
+see.
 
 Rails flash remains forbidden (`generic/no-flash-messages.mdc`). Sign-out already has a
 session-bound, one-time marker in `SignOutNotice`. That marker is the transport for the one-shot
@@ -55,9 +58,8 @@ POST /sign/out
 completed sign-out sets Inertia `clearHistory` so Back cannot restore a signed-in page.
 
 `GET /sign/out/complete` is removed from Base app, com, and org. Base OIDC
-`post_logout_redirect_uri` values for Base hosts, and Base logout-transaction completion URLs,
-point at `/lobby`. Side hosts registered on `base-rails-rp` still complete at
-`/sign/out/complete`.
+`post_logout_redirect_uri` values for Base hosts, and Base logout-transaction completion URLs, point
+at `/lobby`. Side hosts registered on `base-rails-rp` still complete at `/sign/out/complete`.
 
 GET is never a logout mutation.
 

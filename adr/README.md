@@ -19,6 +19,12 @@ Current org federated sign-in decision:
 
 Current identity authority decision:
 
+- `adr/base-auth-ceremony-and-seven-rp-boundary.md` — **current** physical boundary: Base is the
+  sole IdP/AS, Auth is ceremony-only, seven first-party RPs (`core-*`/`side-*`/`edit-org`), opaque
+  handoff/result, Root homes, one-shot `/sign/out`, and Valkey auth-state topology for nonprod.
+
+Legacy identity authority notes (superseded where they conflict):
+
 - `adr/core-browser-jwt-cookie-transport-and-nextjs-zero-cookie-boundary.md` — current source of
   truth for Core browser credential transport on `jp.umaxica.app`: Rails Core may consume a
   short-lived `core-browser` access JWT only from an HttpOnly host-only cookie, refresh remains

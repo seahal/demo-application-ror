@@ -1,11 +1,12 @@
 # Implementation pause notes
 
-- The route/root/sign-out slice is currently unverified because Rails boot is blocked by the
-  configured PostgreSQL `primary` hostname and the debugger workspace-socket `EPERM` failure.
-- The new Valkey auth-state adapters require `AUTH_STATE_REDIS_URL` before exercising a live
-  completion or authorization-code exchange. The remaining implementation phases must add that
-  responsibility URL to the tracked environment/Compose contracts without editing a developer's
-  ignored `.env` file.
-- The browser sign-out controllers now expose `show`, but the remaining implementation must finish
-  the one-shot completion rendering/page namespace migration and remove every obsolete completion
-  helper/reference before the route contract can be considered complete.
+- P1 (authority ADR + AuthBoundaryAuthorityMap + inventory contracts) is complete on `feature`.
+- Remaining: P2–P9 per `plans/backlog/integrated-auth-boundary-surface-consolidation-plan.md`.
+- Local verification used host PostgreSQL 17 + vfs-podman Valkey (compose overlay store was
+  corrupt).
+- `AUTH_STATE_REDIS_URL` still needs tracked `.env.example` / Compose / `.env.devcontainer.example`
+  (do NOT edit ignored `.env`) before live Valkey auth-state exercises (P3/P7).
+- Sign-out `show` exists; one-shot completion page migration and `/sign/out/complete` removal remain
+  (P7).
+- Empty `*_structure.sql` dumps mean fresh DBs need `db:migrate` (with `create_unlogged_tables` skip
+  on the client_external_identities LOGGED migration).
