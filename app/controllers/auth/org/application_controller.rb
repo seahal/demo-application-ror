@@ -97,7 +97,7 @@ module Auth
       def after_login_path
         return oidc_authorization_after_login_path if oidc_authorization_login_challenge.present?
 
-        base_org_dashboard_url(ri: current_region_identifier, host: base_authority_host)
+        base_org_root_url(ri: current_region_identifier, host: base_authority_host)
       end
 
       def after_login_allows_other_host?

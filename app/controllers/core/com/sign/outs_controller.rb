@@ -16,7 +16,7 @@ module Core
         helper_method :sign_out_completed_description
         helper_method :sign_out_confirmation_form_path
 
-        after_action :sign_out_notice_cache_headers!, only: %i(edit complete)
+        after_action :sign_out_notice_cache_headers!, only: %i(show edit)
 
         def new
           redirect_to(sign_out_edit_path, status: :see_other)
@@ -26,16 +26,16 @@ module Core
           render "auth/shared/sign_outs/edit"
         end
 
+        def show
+          complete_oidc_rp_logout!
+        end
+
         def create
           launch_oidc_rp_logout!(
             client_id: "core-next-rp",
             issuer_resource_type: "visitor",
             token_issuer: "visitor",
           )
-        end
-
-        def complete
-          complete_oidc_rp_logout!
         end
 
         private

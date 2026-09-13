@@ -1,11 +1,12 @@
 # typed: false
 # frozen_string_literal: true
 
-# Base-local sign-out finishes on GET /lobby rather than a reloadable completion page.
+# Base-local sign-out finishes on a one-shot GET /sign/out representation rather than a
+# reloadable completion page.
 #
 # `logout_current_session!` resets the Rails session. The one-time completion marker must be
 # written after that reset so the following 303 can still read it. Rails flash is not used;
-# `SignOutNotice` is the existing session-bound transport for this one-shot message.
+# `SignOutNotice` is the existing presentation-only transport for this one-shot message.
 module BaseSignOutDestination
   private
 
@@ -20,7 +21,7 @@ module BaseSignOutDestination
   end
 
   def sign_out_finished_path
-    public_send("#{sign_out_route_helper_prefix}_lobby_path", **sign_out_finished_route_params)
+    public_send("#{sign_out_route_helper_prefix}_sign_out_path", **sign_out_finished_route_params)
   end
 
   def sign_out_finished_route_params

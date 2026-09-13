@@ -225,7 +225,7 @@ module Base
               return render_invalid_resolution unless login_result[:status] == :success
             end
 
-            redirect_to(base_app_dashboard_path(ri: params[:ri]), status: :see_other)
+            redirect_to(base_app_root_path(ri: params[:ri]), status: :see_other)
           end
 
           def resume_authorization_after_resolution

@@ -13,6 +13,7 @@ export type RootLandingProps = {
   title: string | null;
   heading: string;
   description: string;
+  sign_in?: RootLandingLink | null;
   sign_up: RootLandingLink | null;
   // Surfaces that offer more than one destination (side settings, palm per-platform sign-up) send
   // them here; the server has already decided which ones the visitor may see.
@@ -22,6 +23,7 @@ export type RootLandingProps = {
 export default function RootLanding({
   heading,
   description,
+  sign_in: signIn,
   sign_up: signUp,
   links,
 }: RootLandingProps) {
@@ -43,9 +45,14 @@ export default function RootLanding({
           <p className="max-w-prose text-lg text-pretty text-fg-muted">{description}</p>
         </header>
 
-        {signUp || links?.length ? (
-          <nav aria-label="Sign up">
+        {signIn || signUp || links?.length ? (
+          <nav aria-label="Authentication">
             <ul className="flex flex-wrap items-center gap-4">
+              {signIn ? (
+                <li>
+                  <ButtonLink href={signIn.href}>{signIn.label}</ButtonLink>
+                </li>
+              ) : null}
               {signUp ? (
                 <li>
                   <ButtonLink href={signUp.href}>{signUp.label}</ButtonLink>
