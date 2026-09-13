@@ -30,10 +30,8 @@ scope module: :edit, as: :edit do
         end
       end
 
-      # Independent edit-org first-party RP entrypoints.
+      # Independent edit-org first-party RP. Canonical start is /sign/in + /sign/in/callback.
       namespace :oidc do
-        resource :authorization, only: :show
-        resource :callback, only: :show
         namespace :backchannel do
           resource :logout, only: :create
         end

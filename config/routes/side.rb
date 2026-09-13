@@ -78,12 +78,6 @@ scope module: :side, as: :side do
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
-      # RP login start: redirects to Base /oauth/authorize.
-      namespace :oidc do
-        resource :authorization, only: :show
-        resource :callback, only: :show
-      end
-
       # Browser CSP report sink; keep configured report-uri path.
       resource :csp_violation_report, only: :create, path: "csp-violation-report"
 
@@ -172,12 +166,6 @@ scope module: :side, as: :side do
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
-      # RP login start: redirects to Base /oauth/authorize.
-      namespace :oidc do
-        resource :authorization, only: :show
-        resource :callback, only: :show
-      end
-
       # Browser CSP report sink; keep configured report-uri path.
       resource :csp_violation_report, only: :create, path: "csp-violation-report"
 
@@ -263,12 +251,6 @@ scope module: :side, as: :side do
         # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
 
         resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
-      end
-
-      # RP login start: redirects to Base /oauth/authorize.
-      namespace :oidc do
-        resource :authorization, only: :show
-        resource :callback, only: :show
       end
 
       # Browser CSP report sink; keep configured report-uri path.

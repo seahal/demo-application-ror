@@ -41,9 +41,16 @@ class CoreAuthBoundaryTest < ActionDispatch::IntegrationTest
       host! host
 
       assert_routing(
-        { method: :get, path: "http://#{host}/oidc/callback" },
+        { method: :get, path: "http://#{host}/sign/in/callback" },
         { controller: surface.fetch(:controller), action: "show" },
       )
+
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path("http://#{host}/oidc/callback", method: :get)
+      end
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path("http://#{host}/oidc/authorization", method: :get)
+      end
 
       assert_routing(
         { method: :post, path: "http://#{host}/sign/out" },
@@ -62,7 +69,7 @@ class CoreAuthBoundaryTest < ActionDispatch::IntegrationTest
       host = surface.fetch(:host)
       host! host
 
-      get "https://#{host}/oidc/callback"
+      get "https://#{host}/sign/in/callback"
 
       assert_response :unprocessable_content
     end

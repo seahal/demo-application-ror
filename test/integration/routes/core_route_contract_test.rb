@@ -157,13 +157,21 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
 
     assert_recognizes(
       { controller: "core/app/oidc/callbacks", action: "show" },
-      { path: "http://#{CORE_APP_HOST}/oidc/callback", method: :get },
+      { path: "http://#{CORE_APP_HOST}/sign/in/callback", method: :get },
     )
 
     assert_recognizes(
       { controller: "core/app/oidc/authorizations", action: "show" },
-      { path: "http://#{CORE_APP_HOST}/oidc/authorization", method: :get },
+      { path: "http://#{CORE_APP_HOST}/sign/in", method: :get },
     )
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/oidc/callback", method: :get)
+    end
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/oidc/authorization", method: :get)
+    end
 
     assert_recognizes(
       { controller: "core/app/sign/outs", action: "new" },
@@ -180,14 +188,14 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       { path: "http://#{CORE_APP_HOST}/sign/out", method: :post },
     )
 
-    assert_recognizes(
-      { controller: "core/app/sign/outs/completions", action: "show" },
-      { path: "http://#{CORE_APP_HOST}/sign/out/complete", method: :get },
-    )
-
     assert_raises(ActionController::RoutingError) do
-      Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sign/out", method: :delete)
+      Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sign/out/complete", method: :get)
     end
+
+    assert_recognizes(
+      { controller: "core/app/sign/outs", action: "destroy" },
+      { path: "http://#{CORE_APP_HOST}/sign/out", method: :delete },
+    )
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sso/authorize", method: :get)
@@ -284,13 +292,21 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
 
     assert_recognizes(
       { controller: "core/com/oidc/callbacks", action: "show" },
-      { path: "http://#{CORE_COM_HOST}/oidc/callback", method: :get },
+      { path: "http://#{CORE_COM_HOST}/sign/in/callback", method: :get },
     )
 
     assert_recognizes(
       { controller: "core/com/oidc/authorizations", action: "show" },
-      { path: "http://#{CORE_COM_HOST}/oidc/authorization", method: :get },
+      { path: "http://#{CORE_COM_HOST}/sign/in", method: :get },
     )
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/oidc/callback", method: :get)
+    end
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/oidc/authorization", method: :get)
+    end
 
     assert_recognizes(
       { controller: "core/com/sign/outs", action: "new" },
@@ -307,14 +323,14 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       { path: "http://#{CORE_COM_HOST}/sign/out", method: :post },
     )
 
-    assert_recognizes(
-      { controller: "core/com/sign/outs/completions", action: "show" },
-      { path: "http://#{CORE_COM_HOST}/sign/out/complete", method: :get },
-    )
-
     assert_raises(ActionController::RoutingError) do
-      Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sign/out", method: :delete)
+      Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sign/out/complete", method: :get)
     end
+
+    assert_recognizes(
+      { controller: "core/com/sign/outs", action: "destroy" },
+      { path: "http://#{CORE_COM_HOST}/sign/out", method: :delete },
+    )
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sso/authorize", method: :get)
@@ -412,13 +428,21 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
 
     assert_recognizes(
       { controller: "core/org/oidc/callbacks", action: "show" },
-      { path: "http://#{CORE_ORG_HOST}/oidc/callback", method: :get },
+      { path: "http://#{CORE_ORG_HOST}/sign/in/callback", method: :get },
     )
 
     assert_recognizes(
       { controller: "core/org/oidc/authorizations", action: "show" },
-      { path: "http://#{CORE_ORG_HOST}/oidc/authorization", method: :get },
+      { path: "http://#{CORE_ORG_HOST}/sign/in", method: :get },
     )
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/oidc/callback", method: :get)
+    end
+
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/oidc/authorization", method: :get)
+    end
 
     assert_recognizes(
       { controller: "core/org/sign/outs", action: "new" },
@@ -435,14 +459,14 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       { path: "http://#{CORE_ORG_HOST}/sign/out", method: :post },
     )
 
-    assert_recognizes(
-      { controller: "core/org/sign/outs/completions", action: "show" },
-      { path: "http://#{CORE_ORG_HOST}/sign/out/complete", method: :get },
-    )
-
     assert_raises(ActionController::RoutingError) do
-      Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sign/out", method: :delete)
+      Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sign/out/complete", method: :get)
     end
+
+    assert_recognizes(
+      { controller: "core/org/sign/outs", action: "destroy" },
+      { path: "http://#{CORE_ORG_HOST}/sign/out", method: :delete },
+    )
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sso/authorize", method: :get)

@@ -5,8 +5,8 @@ require "test_helper"
 class AppRailsEdgeOwnershipContractTest < ActiveSupport::TestCase
   RAILS_OWNED = [
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/", "core/app/roots", "index"],
-    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/oidc/authorization", "core/app/oidc/authorizations", "show"],
-    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/oidc/callback", "core/app/oidc/callbacks", "show"],
+    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/in", "core/app/oidc/authorizations", "show"],
+    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/in/callback", "core/app/oidc/callbacks", "show"],
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :post, "/oidc/backchannel/logout", "core/app/oidc/backchannel/logouts",
      "create",],
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/api/v0/session", "core/app/api/v0/sessions", "show"],
@@ -15,10 +15,9 @@ class AppRailsEdgeOwnershipContractTest < ActiveSupport::TestCase
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/out/new", "core/app/sign/outs", "new"],
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/out/edit", "core/app/sign/outs", "edit"],
     [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :post, "/sign/out", "core/app/sign/outs", "create"],
-    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/out/complete", "core/app/sign/outs/completions", "show"],
+    [ENV.fetch("PRIVATE_CORE_SERVICE_URL"), :get, "/sign/out", "core/app/sign/outs", "show"],
     [ENV.fetch("PUBLIC_AUTH_SERVICE_URL"), :get, "/sign/in", "auth/app/sign/ins", "show"],
-    [ENV.fetch("PUBLIC_BASE_SERVICE_URL"), :get, "/lobby", "base/app/lobbies", "show"],
-    [ENV.fetch("PUBLIC_BASE_SERVICE_URL"), :get, "/dashboard", "base/app/dashboards", "show"],
+    [ENV.fetch("PUBLIC_BASE_SERVICE_URL"), :get, "/", "base/app/roots", "index"],
     [ENV.fetch("PUBLIC_SIDE_SERVICE_URL"), :get, "/dashboard", "side/app/dashboards", "show"],
   ].freeze
 
@@ -61,8 +60,18 @@ class AppRailsEdgeOwnershipContractTest < ActiveSupport::TestCase
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{core_host}/api/v0/token/refresh", method: :get)
     end
+    recognized = Rails.application.routes.recognize_path("http://#{core_host}/sign/out", method: :get)
+
+    assert_equal "core/app/sign/outs", recognized[:controller]
+    assert_equal "show", recognized[:action]
     assert_raises(ActionController::RoutingError) do
-      Rails.application.routes.recognize_path("http://#{core_host}/sign/out", method: :get)
+      Rails.application.routes.recognize_path("http://#{core_host}/sign/out/complete", method: :get)
+    end
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{core_host}/oidc/authorization", method: :get)
+    end
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{core_host}/oidc/callback", method: :get)
     end
   end
 end

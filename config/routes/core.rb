@@ -62,12 +62,8 @@ scope module: :core, as: :core do
         end
       end
 
-      # RP OIDC entrypoints.
+      # RP back-channel receiver. Canonical browser start is /sign/in + /sign/in/callback.
       namespace :oidc do
-        resource :authorization, only: :show
-        resource :callback, only: :show
-
-        # RP back-channel receiver.
         namespace :backchannel do
           resource :logout, only: :create
         end
@@ -146,12 +142,8 @@ scope module: :core, as: :core do
         end
       end
 
-      # RP OIDC entrypoints.
+      # RP back-channel receiver. Canonical browser start is /sign/in + /sign/in/callback.
       namespace :oidc do
-        resource :callback, only: :show
-        resource :authorization, only: :show
-
-        # RP back-channel receiver.
         namespace :backchannel do
           resource :logout, only: :create
         end
@@ -230,12 +222,8 @@ scope module: :core, as: :core do
         end
       end
 
-      # RP OIDC entrypoints.
+      # RP back-channel receiver. Canonical browser start is /sign/in + /sign/in/callback.
       namespace :oidc do
-        resource :callback, only: :show
-        resource :authorization, only: :show
-
-        # RP back-channel receiver.
         namespace :backchannel do
           resource :logout, only: :create
         end

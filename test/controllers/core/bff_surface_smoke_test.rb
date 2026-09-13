@@ -40,7 +40,7 @@ class CoreBffSurfaceSmokeTest < ActionDispatch::IntegrationTest
       host = surface.fetch(:host)
       host! host
 
-      get "https://#{host}/oidc/callback"
+      get "https://#{host}/sign/in/callback"
 
       assert_response :unprocessable_content
 

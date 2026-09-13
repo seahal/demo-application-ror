@@ -132,4 +132,25 @@ class EditOrgPublishingManagementRouteContractTest < ActionDispatch::Integration
       )
     end
   end
+
+  test "edit leftover oidc authorize and callback paths are unroutable" do
+    recognized = Rails.application.routes.recognize_path("http://#{HOST}/sign/in", method: :get)
+
+    assert_equal "edit/org/oidc/authorizations", recognized.fetch(:controller)
+    recognized = Rails.application.routes.recognize_path("http://#{HOST}/sign/in/callback", method: :get)
+
+    assert_equal "edit/org/oidc/callbacks", recognized.fetch(:controller)
+    ["/oidc/authorization", "/oidc/callback"].each do |path|
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path("http://#{HOST}#{path}", method: :get)
+      end
+    end
+
+    recognized = Rails.application.routes.recognize_path(
+      "http://#{HOST}/oidc/backchannel/logout",
+      method: :post,
+    )
+
+    assert_equal "edit/org/oidc/backchannel/logouts", recognized.fetch(:controller)
+  end
 end
