@@ -24,6 +24,7 @@ module JitSecurityJwtRegistry
     ACME_APP ACME_COM ACME_ORG
     CORE_APP CORE_COM CORE_ORG
     BASE_APP BASE_COM BASE_ORG
+    EDIT_ORG
   ).freeze
   SURFACE_ISSUER_ORIGINS = {
     "SIGN_APP" => "https://log.umaxica.app",
@@ -35,6 +36,7 @@ module JitSecurityJwtRegistry
     "CORE_APP" => "https://jpx.umaxica.app",
     "CORE_COM" => "https://jpx.umaxica.com",
     "CORE_ORG" => "https://jpx.umaxica.org",
+    "EDIT_ORG" => "https://edit.umaxica.org",
     "BASE_APP" => "https://www.umaxica.app",
     "BASE_COM" => "https://www.umaxica.com",
     "BASE_ORG" => "https://www.umaxica.org",
