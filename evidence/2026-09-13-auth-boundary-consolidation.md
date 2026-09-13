@@ -1,72 +1,72 @@
 # Auth-boundary consolidation evidence (2026-09-13 JST)
 
 Branch: `feature`  
-Head at evidence write: see `git log -1 --oneline` after P9 commit.
+Head at evidence write: `898fc6ea4` (see also Valkey cutover `9e4b71856`).
 
 ## Environment
 
-- Host PostgreSQL 17 on `127.0.0.1:5432` (compose overlay store was corrupt).
-- Valkey via vfs-podman (`vcache` on `:6379`); logical DBs 0/1/2 used for
-  cache/rate-limit/auth-state in local helpers.
-- Rails tests executed inside persistent `rails-dev` (`ruby:4.0.6-trixie`, host network).
+- Host PostgreSQL 17 on `127.0.0.1:5432`.
+- Valkey via vfs-podman on `:6379`; logical DBs 0/1/2 for cache/rate-limit/auth-state.
+- `RUBY_DEBUG_OPEN=false`, `TMPDIR=/tmp/umaxica-vitest`.
+- Rails tests with `bundle exec rails test` on the box (`ruby 4.0.6`).
 
 ## Phase landings (pushed to `origin/feature`)
 
-| Phase | Tip SHA (short)                 | Notes                                                |
-| ----- | ------------------------------- | ---------------------------------------------------- |
-| P1    | `106a447a7` (+ earlier ADR/map) | Authority ADR + AuthBoundaryAuthorityMap             |
-| P2    | `7bdb40bdc`                     | TokenUsage → RpSession; JWT-only Access auth         |
-| P3    | `58ed3f1e6`                     | One Valkey; AUTH_STATE_REDIS_URL; hiredis; stores    |
-| P4    | `54fea648e`                     | AuthCeremonySession + OpaqueAdmissionStore           |
-| P5    | `3e8c64320`                     | Seven first-party RP client registrations            |
-| P6    | `d9a691615`                     | Auth/Base dashboards + lobby removed                 |
-| P7    | `d02eeced2`                     | `/sign/out/complete` + CompletionsController removed |
-| P8    | `80e1b27ef`                     | Twelve explicit Edit Publishing route declarations   |
-| P9    | (this commit)                   | Docs/evidence + targeted verification                |
+| Phase                  | Tip SHA (short)     | Notes                                                                                                  |
+| ---------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| P1–P9 skeleton         | through `ddab9d314` | Prior session foundations                                                                              |
+| P5 Valkey code cutover | `9e4b71856`         | Issue+exchange on Valkey CAS; PG `*AuthorizationCode` dropped; JTI stays in PG                         |
+| P5 seven-RP wiring     | `898fc6ea4`         | Core/Side/Edit client IDs; `/sign/in`+`/sign/in/callback`; Edit Org RP; Auth/Base RP `/oidc/*` retired |
 
-## Targeted verification executed
+## Verification executed this session
 
-### Rails (49 runs / 459 assertions — green)
+### Valkey authorization-code cutover
 
 ```
 bundle exec rails test \
-  test/values/auth_boundary_authority_map_test.rb \
-  test/integration/routes/auth_boundary_authority_inventory_test.rb \
-  test/models/rp_session_test.rb \
-  test/operations/rp_session_revoker_test.rb \
-  test/lib/umaxica/valkey \
-  test/services/valkey/auth_state \
-  test/models/auth_ceremony_session_test.rb \
-  test/values/oidc_seven_first_party_rp_clients_test.rb \
-  test/integration/routes/auth_base_root_contract_test.rb \
-  test/integration/routes/sign_out_oneshot_contract_test.rb \
-  test/integration/routes/edit_publishing_explicit_routes_test.rb
+  test/services/valkey/auth_state/authorization_code_store_test.rb \
+  test/services/oidc/token_exchange_service_test.rb \
+  test/services/oidc/authorize_service_test.rb \
+  test/services/branch_coverage_batch3_services_test.rb \
+  test/services/anomaly_reporting_and_authorize_failures_test.rb \
+  test/controllers/palm/app/oidc/callbacks_controller_test.rb
 ```
 
-Result: `49 runs, 459 assertions, 0 failures, 0 errors, 0 skips`.
+Result (after model drop + migrate): `102 runs, 381 assertions, 0 failures, 0 errors` (one transient
+batch3 binding error fixed; recheck green).
 
-### JavaScript
+Earlier focused cutover suite before model deletion:
+`94 runs, 356 assertions, 0 failures, 0 errors`.
 
-- `bun run test:coverage` — Statements/Lines ~99.86%, Branches ~99.71%, Functions 100%.
-- Pre-push `frontend-check` passed on each phase push (oxfmt/oxlint/typecheck/knip/openapi/vite).
+### Seven-RP registry
+
+```
+bundle exec rails test test/values/oidc_seven_first_party_rp_clients_test.rb
+```
+
+Result: `2 runs, 69 assertions, 0 failures, 0 errors`.
+
+Route recognition spot-check: Core/Side/Edit `/sign/in` and `/sign/in/callback` resolve; Base/Auth
+`/oidc/callback` raise `RoutingError`; Base `/oauth/authorize` remains.
+
+Pre-push `frontend-check` passed on both pushes.
 
 ## Remaining gaps vs plan completion conditions
 
-These are **not** claimed complete:
-
-1. **P5 follow-through:** OAuth authorization codes still issued/consumed via PostgreSQL
-   `*AuthorizationCode` models; Valkey `AuthorizationCodeStore` is tested but not yet the exchange
-   coordinator path. Deprecated shared clients (`sign-rp`, `core-next-rp`, …) remain registered for
-   migration compatibility.
-2. **P4 call-site migration:** AuthCeremonySession / opaque admission are foundation-only; most
-   ceremony controllers still use prior session/JWT handoff machinery.
-3. **Full Rails suite / SimpleCov gate:** not re-run end-to-end in this session (multi-DB parallel
-   workers require careful DB prepare; targeted suites above are green).
-4. **Browser history / E2E:** not executed in this session.
+1. **Shared browser clients still registered** (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
+   `core-next-rp`) until seven end-to-end browser flows are proven. Legacy `/oidc/callback` still
+   mounted beside `/sign/in/callback` on Core/Side for compatibility.
+2. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
+   ceremony controllers not yet migrated onto opaque handoff/result + Base admission.
+3. **Full Rails suite + SimpleCov + browser E2E:** not re-run end-to-end this session. Some route
+   contract tests still assert retired `/dashboard` and `/sign/out/complete` (stale vs P6/P7).
+4. **Side RP JWT namespaces** still use `BASE_*` key material (not independent `SIDE_*` namespaces).
+5. **Compose bring-up** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
+   re-validated as a full stack in this session (host Postgres + Valkey used).
 
 ## Conclusion
 
-Phases P1–P9 each have a focused commit+push on `feature` with hooks green. Architectural foundation
-and route/inventory closures for P6–P8 are in place. Treat the plan’s absolute completion conditions
-as **partially satisfied** until the P5 exchange cutover, ceremony call-site migration, and full
-Rails/CI suite are finished.
+P5 Valkey authorization-code exchange cutover and seven-RP controller/route wiring are pushed on
+`feature` with hooks green. Plan absolute completion still requires P4 ceremony call-site migration,
+shared-client retirement after seven flows, full Rails/coverage/browser suites, and evidence/ADR
+polish for those closures.
