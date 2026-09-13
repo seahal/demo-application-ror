@@ -86,7 +86,7 @@ module AuthCeremonyAdmission
         path: "/",
         query: params[:ri].present? ? { ri: params[:ri] }.to_query : nil,
       ).to_s,
-      allow_other_host: true,
+      allow_other_host: cross_host_redirect_allowed?,
       status: :see_other,
     )
   end
