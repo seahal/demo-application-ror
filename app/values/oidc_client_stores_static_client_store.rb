@@ -285,7 +285,7 @@ module OidcClientStoresStaticClientStore
     end
   end
 
-  def build_post_logout_redirect_uris(env_key, default_host = nil, path: "/sign/out/complete")
+  def build_post_logout_redirect_uris(env_key, default_host = nil, path: "/sign/out")
     configured_hosts_for(env_key, default_host).map do |host|
       protocol = (Rails.env.production? || public_host?(host)) ? "https" : "http"
       port_suffix = (Rails.env.production? || public_host?(host)) ? "" : ":3000"

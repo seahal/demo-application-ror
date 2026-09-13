@@ -96,7 +96,7 @@ class Auth::IdentityAuthoritySlice1ATest < ActionDispatch::IntegrationTest
     assert_equal "destroy", route.fetch(:action)
 
     route = Rails.application.routes.recognize_path(
-      "https://#{ENV.fetch("PRIVATE_AUTH_SERVICE_URL", "auth.app.localhost")}/sign/out/complete",
+      "https://#{ENV.fetch("PRIVATE_AUTH_SERVICE_URL", "auth.app.localhost")}/sign/out",
       method: :get,
     )
 
