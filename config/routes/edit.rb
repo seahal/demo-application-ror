@@ -30,20 +30,109 @@ scope module: :edit, as: :edit do
         end
       end
 
-      # Staff Publishing CMS. The URL is surface and audience only; locale is not a
-      # path segment. Each cell maps to every Edition with that surface and audience.
+      # Staff Publishing CMS. Twelve explicit surface/audience cells (no route loops).
+      # Locale is not a path segment; each cell maps Editions for that surface+audience.
       resource :publishing, only: [], module: :publishing do
-        publishing_audiences = %i(app com org)
-        %i(info docs news help).each do |publishing_surface|
-          resource publishing_surface, only: [], module: publishing_surface do
-            publishing_audiences.each do |publishing_audience|
-              resource publishing_audience, only: [], module: publishing_audience do
-                resources :entries, only: %i(index new create show edit update) do
-                  scope module: :entries do
-                    resources :publications, only: %i(create destroy)
-                    resource :archive, only: %i(create destroy)
-                  end
-                end
+        resource :info, only: [], module: :info do
+          resource :app, only: [], module: :app do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :com, only: [], module: :com do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :org, only: [], module: :org do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+        end
+        resource :docs, only: [], module: :docs do
+          resource :app, only: [], module: :app do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :com, only: [], module: :com do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :org, only: [], module: :org do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+        end
+        resource :news, only: [], module: :news do
+          resource :app, only: [], module: :app do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :com, only: [], module: :com do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :org, only: [], module: :org do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+        end
+        resource :help, only: [], module: :help do
+          resource :app, only: [], module: :app do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :com, only: [], module: :com do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
+              end
+            end
+          end
+          resource :org, only: [], module: :org do
+            resources :entries, only: %i(index new create show edit update) do
+              scope module: :entries do
+                resources :publications, only: %i(create destroy)
+                resource :archive, only: %i(create destroy)
               end
             end
           end
