@@ -300,9 +300,9 @@ class SocialAuthAppFlowContractTest < ActionDispatch::IntegrationTest
       end
     end
 
-    # The completion form posts to the public base origin, so the dashboard
-    # handoff continues from there.
-    assert_redirected_to "https://#{ENV.fetch("PUBLIC_BASE_SERVICE_URL")}/dashboard"
+    # The completion form posts to the public base origin; Base root `/` is the
+    # post-login landing (retired `/dashboard`).
+    assert_redirected_to "https://#{ENV.fetch("PUBLIC_BASE_SERVICE_URL")}/"
     identity.reload
 
     assert_equal user.id, identity.user_id
