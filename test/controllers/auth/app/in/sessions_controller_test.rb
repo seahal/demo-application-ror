@@ -657,7 +657,7 @@ class Auth::App::Sign::In::SessionsControllerTest < ActionDispatch::IntegrationT
       "X-TEST-SESSION-PUBLIC-ID" => token.public_id,
     }
 
-    get auth_app_dashboard_url(ri: "jp", host: base_host), headers: headers
+    get base_app_accounts_url(ri: "jp", host: base_host), headers: headers
 
     assert_response :bad_request
   end

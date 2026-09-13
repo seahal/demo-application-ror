@@ -51,7 +51,7 @@ class BaseSignOutAndOauthRevocationTest < ActionDispatch::IntegrationTest
     post base_app_sign_out_url(ri: "jp", host: host), headers: { "Host" => host }
 
     assert_response :see_other
-    assert_equal base_app_lobby_path(ri: "jp"), URI.parse(response.location).request_uri
+    assert_equal base_app_sign_out_path(ri: "jp"), URI.parse(response.location).request_uri
     assert_includes response.headers["Cache-Control"].to_s, "no-store"
   end
 

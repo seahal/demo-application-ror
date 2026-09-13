@@ -7,6 +7,7 @@ require "test_helper"
 class Base::Com::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::IntegrationTest
   setup do
     @host = ENV.fetch("PUBLIC_BASE_CORPORATE_URL", "base.com.localhost")
+    @sign_host = ENV.fetch("PUBLIC_AUTH_CORPORATE_URL", "auth.com.localhost")
     @visitor = create_verified_visitor_with_email(email_address: "base-dashboard-#{SecureRandom.hex(4)}@example.com")
     @visitor.visitor_telephones.create!(
       number: "+8190#{SecureRandom.random_number(10**8).to_s.rjust(8, "0")}",
@@ -14,21 +15,21 @@ class Base::Com::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     )
   end
 
-  test "dashboard_requires_authentication" do
-    get base_com_dashboard_url(ri: "jp"), headers: host_headers(@host)
+  test "public_root_renders_auth_ceremony_links" do
+    get base_com_root_url(ri: "jp"), headers: host_headers(@host)
 
-    assert_response :redirect
-    signin_uri = URI.parse(jump_rt_url_from_location(response.location))
-
-    assert_equal @host, signin_uri.host
-    assert_equal "/oauth/authorize", signin_uri.path
+    assert_response :success
+    assert_equal auth_com_sign_in_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_in", "href")
+    assert_equal auth_com_sign_up_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_up", "href")
   end
 
   test "dashboard_renders_when_signed_in" do
     token = VisitorToken.create!(visitor: @visitor, visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB)
     select_token!(surface: :com, principal: @visitor, token: token)
 
-    get base_com_dashboard_url(ri: "jp"), headers: session_headers(token)
+    get base_com_root_url(ri: "jp"), headers: session_headers(token)
 
     assert_response :success
     assert_equal "base/com/dashboards/show", inertia_component
@@ -40,13 +41,12 @@ class Base::Com::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     labelled = links.to_h { |link| [link.fetch("label"), link.fetch("href")] }
 
     assert_includes hrefs, base_com_root_path(ri: "jp")
-    assert_includes hrefs, base_com_dashboard_path(ri: "jp")
     assert_equal base_com_accounts_path(ri: "jp"), labelled.fetch(dashboard_label(:account))
     assert_equal base_com_organizations_path(ri: "jp"), labelled.fetch(dashboard_label(:organization))
     assert_includes hrefs, base_com_selector_path(ri: "jp")
     assert_includes hrefs, new_base_com_sign_out_path(ri: "jp")
-    assert_includes hrefs, base_com_oidc_authorization_path(ri: "jp", screen_hint: "signin")
-    assert_includes hrefs, base_com_oidc_authorization_path(ri: "jp", screen_hint: "signup")
+    assert_includes hrefs, auth_com_sign_in_url(ri: "jp", host: @sign_host, protocol: "https")
+    assert_includes hrefs, auth_com_sign_up_url(ri: "jp", host: @sign_host, protocol: "https")
     assert_includes labelled.keys, dashboard_label(:oidc_discovery)
     assert_includes labelled.keys, dashboard_label(:jwks)
     assert_includes labelled.keys, dashboard_label(:userinfo)
@@ -62,7 +62,7 @@ class Base::Com::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     assert_response :success
     assert_equal "base/com/identities/show", inertia_component
     assert_equal I18n.t("base.shared.identity.up_link", locale: :ja), inertia_props.dig("up_link", "label")
-    assert_equal base_com_dashboard_path(ri: "jp"), inertia_props.dig("up_link", "href")
+    assert_equal base_com_root_path(ri: "jp"), inertia_props.dig("up_link", "href")
   end
 
   test "identity_show_links_to_identity_pages" do

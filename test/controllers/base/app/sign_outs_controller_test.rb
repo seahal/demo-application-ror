@@ -49,7 +49,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     location = URI.parse(response.location)
 
     assert_equal @host, location.host
-    assert_equal base_app_lobby_path(ri: "jp"), location.request_uri
+    assert_equal base_app_sign_out_path(ri: "jp"), location.request_uri
 
     get response.location
 
@@ -57,7 +57,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "base/app/lobbies/show", inertia_component
     assert_equal I18n.t("sign.shared.sign_out.completed_title"), inertia_props.fetch("notice").fetch("title")
 
-    get base_app_lobby_url(host: @host, ri: "jp")
+    get base_app_sign_out_url(host: @host, ri: "jp")
 
     assert_response :success
     assert_nil inertia_props["notice"]
@@ -86,7 +86,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
 
     post base_app_sign_out_url(host: @host, ri: "jp"), headers: session_headers(token)
     get response.location
-    get base_app_lobby_url(host: @host, ri: "jp")
+    get base_app_sign_out_url(host: @host, ri: "jp")
 
     assert_response :success
     assert_not inertia_page.fetch("clearHistory")
@@ -96,7 +96,7 @@ class Base::App::SignOutsControllerTest < ActionDispatch::IntegrationTest
     post base_app_sign_out_url(host: @host, ri: "jp")
 
     assert_response :see_other
-    assert_equal base_app_lobby_path(ri: "jp"), URI.parse(response.location).request_uri
+    assert_equal base_app_sign_out_path(ri: "jp"), URI.parse(response.location).request_uri
 
     get response.location
 

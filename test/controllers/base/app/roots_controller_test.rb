@@ -52,28 +52,6 @@ class Base::App::RootsControllerTest < ActionDispatch::IntegrationTest
     assert_equal base_app_root_url(ri: "jp"), response.location
   end
 
-  test "auth authorize preserves app sign up and sign in screen hints" do
-    host! ENV.fetch("PUBLIC_BASE_SERVICE_URL", "base.app.localhost")
-
-    get base_app_oidc_authorization_url(ri: "jp", screen_hint: "signup")
-
-    assert_response :redirect
-    signup_uri = URI.parse(jump_rt_url_from_location(response.location))
-    signup_query = Rack::Utils.parse_nested_query(signup_uri.query)
-
-    assert_equal "signup", signup_query["screen_hint"]
-    assert_equal "/dashboard?ri=jp", session[:oidc_pt]
-
-    get base_app_oidc_authorization_url(ri: "jp", screen_hint: "signin")
-
-    assert_response :redirect
-    signin_uri = URI.parse(jump_rt_url_from_location(response.location))
-    signin_query = Rack::Utils.parse_nested_query(signin_uri.query)
-
-    assert_equal "signin", signin_query["screen_hint"]
-    assert_equal "/dashboard?ri=jp", session[:oidc_pt]
-  end
-
   test "mints no preference state on the gateway host it redirects away from" do
     host! ENV.fetch("PUBLIC_BASE_SERVICE_URL", "base.app.localhost")
 

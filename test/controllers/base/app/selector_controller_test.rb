@@ -31,7 +31,7 @@ class Base::App::SelectorControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     assert_not_equal base_app_switcher_path(ri: "jp"), URI.parse(response.location).request_uri
-    assert_not_equal base_app_dashboard_path(ri: "jp"), URI.parse(response.location).request_uri
+    assert_not_equal base_app_root_path(ri: "jp"), URI.parse(response.location).request_uri
   end
 
   test "authenticated identity without selected actor context can access selector" do
@@ -56,11 +56,11 @@ class Base::App::SelectorControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, ClientIdentity.where(source_record_id: @user.id).count
   end
 
-  test "html selector request auto-selects a single unselected context toward dashboard" do
+  test "html selector request auto-selects a single unselected context toward root" do
     get base_app_selector_url(host: @host, ri: "jp"),
         headers: as_user_headers(@user, host: @host, session_public_id: @token.public_id)
 
-    assert_redirected_to base_app_dashboard_path(ri: "jp")
+    assert_redirected_to base_app_root_path(ri: "jp")
     assert_predicate @token.reload, :selected_actor_context?
   end
 
@@ -70,7 +70,7 @@ class Base::App::SelectorControllerTest < ActionDispatch::IntegrationTest
         headers: as_user_headers(@user, host: @host, session_public_id: @token.public_id)
 
     assert_redirected_to base_app_switcher_path(ri: "jp")
-    assert_not_equal base_app_dashboard_path(ri: "jp"), URI.parse(response.location).request_uri
+    assert_not_equal base_app_root_path(ri: "jp"), URI.parse(response.location).request_uri
     assert_predicate @token.reload, :selected_actor_context?
   end
 
@@ -81,7 +81,7 @@ class Base::App::SelectorControllerTest < ActionDispatch::IntegrationTest
       principal_id: @user.id,
       status_id: ClientSignInFlow.status_id_for("SELECTOR_PENDING"),
       step: "selector",
-      return_to: "/dashboard",
+      return_to: "/",
       nonce_digest: ClientSignInFlow.digest_nonce(nonce),
       issued_at: Time.current,
       expires_at: 15.minutes.from_now,

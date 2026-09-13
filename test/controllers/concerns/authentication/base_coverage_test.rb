@@ -1414,7 +1414,7 @@ class AuthenticationBaseCoverageTest < ActionDispatch::IntegrationTest
     @session_hash[:oidc_code_verifier] = "verifier"
     @session_hash[:oidc_state] = "state"
     @session_hash[:oidc_nonce] = "nonce"
-    @session_hash[:oidc_pt] = "/dashboard?ri=jp"
+    @session_hash[:oidc_pt] = "/?ri=jp"
     @session_hash[:unrelated_pre_login_state] = "drop-me"
 
     @controller.define_singleton_method(:reset_session) { @session_hash.clear }
@@ -1432,7 +1432,7 @@ class AuthenticationBaseCoverageTest < ActionDispatch::IntegrationTest
     assert_equal "verifier", @session_hash[:oidc_code_verifier]
     assert_equal "state", @session_hash[:oidc_state]
     assert_equal "nonce", @session_hash[:oidc_nonce]
-    assert_equal "/dashboard?ri=jp", @session_hash[:oidc_pt]
+    assert_equal "/?ri=jp", @session_hash[:oidc_pt]
     assert_nil @session_hash[:unrelated_pre_login_state]
   end
 
@@ -1488,8 +1488,8 @@ class AuthenticationBaseCoverageTest < ActionDispatch::IntegrationTest
     assert_nil @controller.path_from_signed_pt(encoded_internal)
     assert_nil @controller.path_from_signed_pt(encoded_absolute)
     assert_nil @controller.path_from_signed_pt("/welcome?ri=jp")
-    assert_equal "/dashboard?ri=jp",
-                 @controller.path_from_signed_pt(@controller.signed_pt_token("/dashboard?ri=jp"))
+    assert_equal "/?ri=jp",
+                 @controller.path_from_signed_pt(@controller.signed_pt_token("/?ri=jp"))
   end
 
   test "path_from_signed_pt rejects an unencoded external URL" do

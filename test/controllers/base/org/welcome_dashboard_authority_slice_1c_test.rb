@@ -9,24 +9,25 @@ class Base::Org::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
 
   setup do
     @host = ENV.fetch("PUBLIC_BASE_STAFF_URL", "base.org.localhost")
+    @sign_host = ENV.fetch("PUBLIC_AUTH_STAFF_URL", "auth.org.localhost")
     @staff = operators(:one)
   end
 
-  test "dashboard_requires_authentication" do
-    get base_org_dashboard_url(ri: "jp"), headers: host_headers(@host)
+  test "public_root_renders_auth_ceremony_links" do
+    get base_org_root_url(ri: "jp"), headers: host_headers(@host)
 
-    assert_response :redirect
-    signin_uri = URI.parse(jump_rt_url_from_location(response.location))
-
-    assert_equal @host, signin_uri.host
-    assert_equal "/oauth/authorize", signin_uri.path
+    assert_response :success
+    assert_equal auth_org_sign_in_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_in", "href")
+    assert_equal auth_org_sign_up_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_up", "href")
   end
 
   test "dashboard_renders_when_signed_in" do
     token = OperatorToken.create!(staff: @staff, staff_token_kind_id: OperatorTokenKind::BROWSER_WEB)
     select_token!(surface: :org, principal: @staff, token: token)
 
-    get base_org_dashboard_url(ri: "jp"), headers: session_headers(token)
+    get base_org_root_url(ri: "jp"), headers: session_headers(token)
 
     assert_response :success
     assert_equal "base/org/dashboards/show", inertia_component
@@ -47,14 +48,13 @@ class Base::Org::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     labelled = links.to_h { |link| [link.fetch("label"), link.fetch("href")] }
 
     assert_includes hrefs, base_org_root_path(ri: "jp")
-    assert_includes hrefs, base_org_dashboard_path(ri: "jp")
     assert_equal base_org_accounts_path(ri: "jp"), labelled.fetch(dashboard_label(:account))
     assert_equal base_org_organizations_path(ri: "jp"), labelled.fetch(dashboard_label(:organization))
     assert_equal base_org_avatar_path(ri: "jp"), labelled.fetch(dashboard_label(:avatar))
     assert_includes hrefs, base_org_selector_path(ri: "jp")
     assert_includes hrefs, new_base_org_sign_out_path(ri: "jp")
-    assert_includes hrefs, base_org_oidc_authorization_path(ri: "jp", screen_hint: "signin")
-    assert_includes hrefs, base_org_oidc_authorization_path(ri: "jp", screen_hint: "signup")
+    assert_includes hrefs, auth_org_sign_in_url(ri: "jp", host: @sign_host, protocol: "https")
+    assert_includes hrefs, auth_org_sign_up_url(ri: "jp", host: @sign_host, protocol: "https")
     assert_includes labelled.keys, dashboard_label(:oidc_discovery)
     assert_includes labelled.keys, dashboard_label(:jwks)
     assert_includes labelled.keys, dashboard_label(:userinfo)
@@ -74,7 +74,7 @@ class Base::Org::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     assert_response :success
     assert_equal "base/org/identities/show", inertia_component
     assert_equal I18n.t("base.shared.identity.up_link", locale: :ja), inertia_props.dig("up_link", "label")
-    assert_equal base_org_dashboard_path(ri: "jp"), inertia_props.dig("up_link", "href")
+    assert_equal base_org_root_path(ri: "jp"), inertia_props.dig("up_link", "href")
   end
 
   test "identity_show_links_to_identity_pages" do

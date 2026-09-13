@@ -14,21 +14,21 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     @user.update!(status_id: ClientStatus::ACTIVE)
   end
 
-  test "dashboard_requires_authentication" do
-    get base_app_dashboard_url(ri: "jp"), headers: host_headers(@host)
+  test "public_root_renders_auth_ceremony_links" do
+    get base_app_root_url(ri: "jp"), headers: host_headers(@host)
 
-    assert_response :redirect
-    signin_uri = URI.parse(jump_rt_url_from_location(response.location))
-
-    assert_equal @host, signin_uri.host
-    assert_equal "/oauth/authorize", signin_uri.path
+    assert_response :success
+    assert_equal auth_app_sign_in_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_in", "href")
+    assert_equal auth_app_sign_up_url(ri: "jp", host: @sign_host, protocol: "https"),
+                 inertia_props.dig("sign_up", "href")
   end
 
   test "dashboard_renders_when_signed_in" do
     token = ClientToken.create!(user: @user, user_token_kind_id: ClientTokenKind::BROWSER_WEB)
     select_token!(surface: :app, principal: @user, token: token)
 
-    get base_app_dashboard_url(ri: "jp"), headers: session_headers(token)
+    get base_app_root_url(ri: "jp"), headers: session_headers(token)
 
     assert_response :success
     assert_equal "base/app/dashboards/show", inertia_component
@@ -40,7 +40,6 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     labelled = links.to_h { |link| [link.fetch("label"), link.fetch("href")] }
 
     assert_includes hrefs, base_app_root_path(ri: "jp")
-    assert_includes hrefs, base_app_dashboard_path(ri: "jp")
     assert_equal base_app_accounts_path(ri: "jp"), labelled.fetch(dashboard_label(:account))
     assert_equal base_app_organizations_path(ri: "jp"), labelled.fetch(dashboard_label(:organization))
     assert_equal base_app_avatars_path(ri: "jp"), labelled.fetch(dashboard_label(:avatar))
@@ -53,8 +52,8 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     assert_includes hrefs, new_base_app_sign_out_path(ri: "jp")
     # The dashboard only links to ceremonies; it never posts a logout itself.
     assert_select "form[action^=?]", base_app_oidc_logout_path, count: 0
-    assert_includes hrefs, base_app_oidc_authorization_path(ri: "jp", screen_hint: "signin")
-    assert_includes hrefs, base_app_oidc_authorization_path(ri: "jp", screen_hint: "signup")
+    assert_includes hrefs, auth_app_sign_in_url(ri: "jp", host: @sign_host, protocol: "https")
+    assert_includes hrefs, auth_app_sign_up_url(ri: "jp", host: @sign_host, protocol: "https")
     assert_includes labelled.keys, dashboard_label(:oidc_discovery)
     assert_includes labelled.keys, dashboard_label(:jwks)
     assert_includes labelled.keys, dashboard_label(:userinfo)
@@ -66,16 +65,16 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     token = ClientToken.create!(user: @user, user_token_kind_id: ClientTokenKind::BROWSER_WEB)
     select_token!(surface: :app, principal: @user, token: token)
 
-    get base_app_dashboard_url(ri: "jp"), headers: session_headers(token)
+    get base_app_root_url(ri: "jp"), headers: session_headers(token)
 
     labelled =
       inertia_props.fetch("sections")
         .flat_map { |section| section.fetch("items") }
         .to_h { |link| [link.fetch("label"), link.fetch("href")] }
 
-    assert_equal base_app_oidc_authorization_path(ri: "jp", screen_hint: "signin"),
+    assert_equal auth_app_sign_in_url(ri: "jp", host: @sign_host, protocol: "https"),
                  labelled.fetch(dashboard_label(:authorize_sign_in))
-    assert_equal base_app_oidc_authorization_path(ri: "jp", screen_hint: "signup"),
+    assert_equal auth_app_sign_up_url(ri: "jp", host: @sign_host, protocol: "https"),
                  labelled.fetch(dashboard_label(:authorize_sign_up))
   end
 
@@ -88,7 +87,7 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     assert_response :success
     assert_equal "base/app/identities/show", inertia_component
     assert_equal I18n.t("base.shared.identity.up_link", locale: :ja), inertia_props.dig("up_link", "label")
-    assert_equal base_app_dashboard_path(ri: "jp"), inertia_props.dig("up_link", "href")
+    assert_equal base_app_root_path(ri: "jp"), inertia_props.dig("up_link", "href")
   end
 
   test "identity_show_links_to_identity_pages" do

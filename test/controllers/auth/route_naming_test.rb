@@ -41,10 +41,9 @@ class Auth::RouteNamingTest < ActionDispatch::IntegrationTest
       assert_recognizes_sign_route(surface, "/sign/out", :post, "auth/#{surface}/sign/outs", "create")
       assert_recognizes_sign_route(surface, "/sign/out", :delete, "auth/#{surface}/sign/outs", "destroy")
       assert_unrecognized(surface, "/signed-out", :get)
-      assert_recognizes_sign_route(
-        surface, "/oidc/backchannel/logout", :post,
-        "auth/#{surface}/oidc/backchannel/logouts", "create",
-      )
+      assert_unrecognized(surface, "/oidc/backchannel/logout", :post)
+      assert_unrecognized(surface, "/oidc/authorization", :get)
+      assert_unrecognized(surface, "/oidc/callback", :get)
       assert_unrecognized(surface, "/oidc/frontchannel_logout", :get)
       assert_unrecognized(surface, "/oidc/logout", :get)
       assert_unrecognized(surface, "/oidc/logout", :post)
@@ -211,8 +210,8 @@ class Auth::RouteNamingTest < ActionDispatch::IntegrationTest
 
     assert_includes source, "scope(module: :auth, as: :auth)"
     assert_includes source, "constraints("
-    assert_includes source, "namespace(:oidc)"
     assert_includes source, "namespace(:social)"
+    assert_not_includes source, "namespace(:oidc)"
   end
 
   private

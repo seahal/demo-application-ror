@@ -205,7 +205,7 @@ class AuthenticationSequenceGateExtraCoverageTest < ActiveSupport::TestCase
   end
 
   class ExternalDashboardHarness < Harness
-    def after_dashboard_path = "https://www.umaxica.app/dashboard?ri=jp"
+    def after_dashboard_path = "https://www.umaxica.app/?ri=jp"
   end
 
   class FallbackHarness < Harness
@@ -295,12 +295,12 @@ class AuthenticationSequenceGateExtraCoverageTest < ActiveSupport::TestCase
     harness.define_singleton_method(:sign_in_sequence_redirect_path) do |pt: nil, default_path: after_dashboard_path|
       _ = pt
       _ = default_path
-      "https://www.umaxica.app/dashboard?ri=jp"
+      "https://www.umaxica.app/?ri=jp"
     end
 
     harness.redirect_to_sign_in_sequence!
 
-    assert_equal ["jump:https://www.umaxica.app/dashboard?ri=jp", {}], harness.redirected
+    assert_equal ["jump:https://www.umaxica.app/?ri=jp", {}], harness.redirected
   end
 
   test "redirect_to_sign_in_sequence! keeps internal paths local" do

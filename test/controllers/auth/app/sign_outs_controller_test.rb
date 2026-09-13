@@ -48,7 +48,7 @@ class Auth::App::Sign::OutsControllerTest < ActionDispatch::IntegrationTest
     assert_predicate query["id_token_hint"], :present?
     assert_predicate query["state"], :present?
     assert_equal(
-      auth_app_sign_out_completion_url(
+      auth_app_sign_out_url(
         ri: "jp",
         host: Rails.configuration.x.boot_config.fetch(:hosts).auth_service.host,
         protocol: "https",

@@ -851,7 +851,7 @@ class AcmePreferenceTest < ActionDispatch::IntegrationTest
       get url, headers: headers
 
       assert_response :success
-      assert_not_equal base_app_dashboard_path, URI.parse(request.path).path
+      assert_not_equal base_app_root_path, URI.parse(request.path).path
     end
 
     [

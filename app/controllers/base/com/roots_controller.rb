@@ -62,13 +62,14 @@ module Base
         [
           {
             label: t("base.shared.dashboard.links.authorize_sign_in"),
-            href: base_com_oidc_authorization_path(ri: params[:ri], screen_hint: "signin"),
+            href: ceremony_sign_in_href,
           },
           {
             label: t("base.shared.dashboard.links.authorize_sign_up"),
-            href: base_com_oidc_authorization_path(ri: params[:ri], screen_hint: "signup"),
+            href: ceremony_sign_up_href,
           },
-          { label: t("base.shared.dashboard.links.oidc_discovery"), href: base_com_well_known_openid_configuration_path },
+          { label: t("base.shared.dashboard.links.oidc_discovery"),
+            href: base_com_well_known_openid_configuration_path, },
           { label: t("base.shared.dashboard.links.jwks"), href: base_com_well_known_jwks_path },
           { label: t("base.shared.dashboard.links.userinfo"), href: base_com_oauth_userinfo_path },
         ]
@@ -81,13 +82,21 @@ module Base
           description: t("landing.thin_endpoint"),
           sign_in: {
             label: "Sign in",
-            href: base_com_oidc_authorization_path(ri: params[:ri], screen_hint: "signin"),
+            href: ceremony_sign_in_href,
           },
           sign_up: {
             label: "Sign up",
-            href: base_com_oidc_authorization_path(ri: params[:ri]),
+            href: ceremony_sign_up_href,
           },
         }
+      end
+
+      def ceremony_sign_in_href
+        auth_com_sign_in_url(ri: params[:ri], host: oidc_sign_host, protocol: "https")
+      end
+
+      def ceremony_sign_up_href
+        auth_com_sign_up_url(ri: params[:ri], host: oidc_sign_host, protocol: "https")
       end
     end
   end

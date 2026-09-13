@@ -462,7 +462,7 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
       assert_equal 3, ClientToken.not_revoked.where(user_id: user.id, rotated_at: nil).count
 
       host!(sign_host)
-      get(sign_app_dashboard_path(ri: "jp"), headers: browser_headers)
+      get(auth_app_root_path(ri: "jp"), headers: browser_headers)
 
       assert_response :success
       assert_select "h1", "Dashboard"

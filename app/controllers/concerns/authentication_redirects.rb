@@ -196,7 +196,7 @@ module AuthenticationRedirects
         host: ENV.fetch("PRIVATE_BASE_STAFF_URL"),
       )
     else
-      "/dashboard"
+      "/"
     end
   end
 

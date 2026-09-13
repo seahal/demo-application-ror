@@ -40,7 +40,7 @@ class Base::Com::SignOutsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "base/com/lobbies/show", inertia_component
     assert_equal I18n.t("sign.shared.sign_out.completed_title"), inertia_props.fetch("notice").fetch("title")
 
-    get base_com_lobby_url(host: @host, ri: "jp")
+    get base_com_sign_out_url(host: @host, ri: "jp")
 
     assert_response :success
     assert_nil inertia_props["notice"]
