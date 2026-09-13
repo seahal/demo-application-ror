@@ -135,10 +135,11 @@ module Auth
         register_oidc_authorization_result!(challenge).resume_url
       ensure
         session.delete(:oidc_authorization_login_challenge)
+        session.delete(:oidc_authorization_intent)
       end
 
       def register_oidc_authorization_result!(login_challenge)
-        OidcAuthorizationTransactionCoordinator.register_result!(
+        BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
           surface: "app",
           login_challenge: login_challenge,
           actor: current_resource,

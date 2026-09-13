@@ -40,6 +40,10 @@ class OidcAuthorizationTransactionCoordinator < ApplicationService
     model_for(surface).find_by!(login_challenge: login_challenge)
   end
 
+  def self.find_by_transaction_id!(surface:, transaction_id:)
+    model_for(surface).find_by!(transaction_id: transaction_id)
+  end
+
   def self.register_result!(surface:, login_challenge:, actor:, session_ref:, auth_method:, acr: nil,
                             now: Time.current)
     transaction = find_by_login_challenge!(surface: surface, login_challenge: login_challenge)

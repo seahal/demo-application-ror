@@ -106,6 +106,11 @@ scope(module: :base, as: :base) do
         resource(:revocation, only: :create, path: "revoke", controller: :revocations)
       end
 
+      # OIDC AS end-session. Discovery advertises /oidc/logout; this is not an RP callback.
+      namespace(:oidc) do
+        resource(:logout, only: %i(show create), controller: :logouts)
+      end
+
       # Public web API: cookie consent, theme.
       namespace :web do
         namespace :v0 do
@@ -337,6 +342,11 @@ scope(module: :base, as: :base) do
         resource(:revocation, only: :create, path: "revoke", controller: :revocations)
       end
 
+      # OIDC AS end-session. Discovery advertises /oidc/logout; this is not an RP callback.
+      namespace(:oidc) do
+        resource(:logout, only: %i(show create), controller: :logouts)
+      end
+
       # Public web API: cookie consent, theme.
       namespace :web do
         namespace :v0 do
@@ -544,6 +554,11 @@ scope(module: :base, as: :base) do
         resource(:token, only: :create, controller: :tokens)
         resource(:userinfo, only: :show, controller: :userinfos)
         resource(:revocation, only: :create, path: "revoke", controller: :revocations)
+      end
+
+      # OIDC AS end-session. Discovery advertises /oidc/logout; this is not an RP callback.
+      namespace(:oidc) do
+        resource(:logout, only: %i(show create), controller: :logouts)
       end
 
       # Public web API: cookie consent, theme.

@@ -12,11 +12,15 @@ module Base
         skip_before_action :set_region, raise: false
 
         def show
-          if params[:login_challenge].present?
+          if params[:result].present?
+            payload = BaseAuthAdmissionCoordinator.consume_result!(
+              raw_code: params[:result].to_s,
+              surface: "com",
+            )
             transaction =
-              OidcAuthorizationTransactionCoordinator.find_by_login_challenge!(
+              OidcAuthorizationTransactionCoordinator.find_by_transaction_id!(
                 surface: "com",
-                login_challenge: params[:login_challenge].to_s,
+                transaction_id: payload.fetch("subject_ref"),
               )
             validate_authorization_request!(transaction.authorize_params)
             resume_authorization!(transaction)
@@ -39,6 +43,9 @@ module Base
           render json: { error: "invalid_request", error_description: e.message }, status: :bad_request
         # RecordNotFound is different: its message names the model and the primary key that
         # was looked up. The client gets a fixed description; the detail goes to the log.
+        rescue BaseAuthAdmissionCoordinator::Denied, Umaxica::Valkey::Unavailable, Umaxica::Valkey::OperationError
+          render json: { error: "invalid_request", error_description: "invalid authorization request" },
+                 status: :bad_request
         rescue ActiveRecord::RecordNotFound => e
           Rails.logger.info(
             JitLogEvent.format(
@@ -83,18 +90,19 @@ module Base
               intent: authorization_intent,
               params: authorize_params,
             )
+          handoff = BaseAuthAdmissionCoordinator.issue_handoff!(transaction: issuance.transaction)
           sign_url =
             if authorization_intent == "sign_up"
               auth_com_sign_up_url(
                 ri: params[:ri],
                 host: oidc_sign_host,
-                login_challenge: issuance.transaction.login_challenge,
+                admission: handoff.code,
               )
             else
               auth_com_sign_in_url(
                 ri: params[:ri],
                 host: oidc_sign_host,
-                login_challenge: issuance.transaction.login_challenge,
+                admission: handoff.code,
               )
             end
           redirect_to_jump_url(sign_url)

@@ -19,10 +19,7 @@ module AuthCeremonySession
     def issue!(ttl: DEFAULT_TTL, now: Time.current)
       raw_sid = SecureRandom.random_bytes(SID_BYTES)
       digest = digest_for(raw_sid)
-      record = create!(
-        sid_digest: digest,
-        expires_at: now + ttl,
-      )
+      record = writing_connection { create!(sid_digest: digest, expires_at: now + ttl) }
       [record, encode_sid(raw_sid)]
     end
 
@@ -46,6 +43,22 @@ module AuthCeremonySession
     def decode_sid(encoded)
       Base64.urlsafe_decode64(encoded.to_s)
     end
+
+    def writing_connection(&)
+      connection_owner.connected_to(role: :writing, &)
+    end
+
+    def connection_owner
+      if self <= AppTicketRecord
+        AppTicketRecord
+      elsif self <= ComTicketRecord
+        ComTicketRecord
+      elsif self <= OrgTicketRecord
+        OrgTicketRecord
+      else
+        ActiveRecord::Base
+      end
+    end
   end
 
   public
@@ -55,21 +68,23 @@ module AuthCeremonySession
   end
 
   def revoke!(now: Time.current)
-    update!(revoked_at: now)
+    self.class.writing_connection { update!(revoked_at: now) }
   end
 
   def rotate!(ttl: DEFAULT_TTL, now: Time.current)
-    with_lock do
-      raise ActiveRecord::RecordInvalid.new(self) unless active?(now: now)
+    self.class.writing_connection do
+      with_lock do
+        raise ActiveRecord::RecordInvalid.new(self) unless active?(now: now)
 
-      raw_sid = SecureRandom.random_bytes(SID_BYTES)
-      update!(
-        previous_sid_digest: sid_digest,
-        sid_digest: self.class.digest_for(raw_sid),
-        expires_at: now + ttl,
-        rotated_at: now,
-      )
-      self.class.encode_sid(raw_sid)
+        raw_sid = SecureRandom.random_bytes(SID_BYTES)
+        update!(
+          previous_sid_digest: sid_digest,
+          sid_digest: self.class.digest_for(raw_sid),
+          expires_at: now + ttl,
+          rotated_at: now,
+        )
+        self.class.encode_sid(raw_sid)
+      end
     end
   end
 

@@ -211,7 +211,7 @@ module Auth
       def oidc_authorization_after_login_path
         challenge = oidc_authorization_login_challenge
         result =
-          OidcAuthorizationTransactionCoordinator.register_result!(
+          BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
             surface: "com",
             login_challenge: challenge,
             actor: current_resource,
@@ -222,6 +222,7 @@ module Auth
         result.resume_url
       ensure
         session.delete(:oidc_authorization_login_challenge)
+        session.delete(:oidc_authorization_intent)
       end
     end
   end

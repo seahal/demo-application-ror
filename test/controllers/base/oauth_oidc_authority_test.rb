@@ -533,9 +533,15 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
 
     assert_equal ENV.fetch("PUBLIC_AUTH_SERVICE_URL", "auth.app.localhost"), uri.host
     assert_equal "/sign/in", uri.path
-    assert_predicate query["login_challenge"], :present?
+    assert_predicate query["admission"], :present?
+    assert_nil query["login_challenge"]
 
-    transaction = ClientOidcAuthorizationTransaction.find_by!(login_challenge: query["login_challenge"])
+    payload = BaseAuthAdmissionCoordinator.consume_handoff!(
+      raw_code: query["admission"],
+      surface: "app",
+      expected_intent: "sign_in",
+    )
+    transaction = ClientOidcAuthorizationTransaction.find_by!(transaction_id: payload.fetch("subject_ref"))
 
     assert_equal "app", transaction.surface
     assert_equal "sign_in", transaction.intent
@@ -673,7 +679,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
       params: oidc_authorize_params,
     )
 
-    OidcAuthorizationTransactionCoordinator.register_result!(
+    result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
       surface: "app",
       login_challenge: issuance.transaction.login_challenge,
       actor: clients(:one),
@@ -681,7 +687,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
       auth_method: "passkey",
     )
 
-    get "/oauth/authorize", params: { login_challenge: issuance.transaction.login_challenge }, headers: browser_headers
+    get "/oauth/authorize", params: { result: result.code }, headers: browser_headers
 
     assert_response :redirect
     uri = URI.parse(jump_rt_url_from_location(response.location))
@@ -691,10 +697,10 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
     assert_equal oidc_authorize_params[:state], query["state"]
     assert_predicate issuance.transaction.reload, :consumed?
 
-    get "/oauth/authorize", params: { login_challenge: issuance.transaction.login_challenge }, headers: browser_headers
+    get "/oauth/authorize", params: { result: result.code }, headers: browser_headers
 
     assert_response :bad_request
-    assert_equal "authorization transaction already consumed", response.parsed_body["error_description"]
+    assert_equal "invalid authorization request", response.parsed_body["error_description"]
   end
 
   test "base oauth authorize rejects expired login challenge" do
@@ -708,10 +714,16 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
         login_challenge_ttl: 1.second,
         now: Time.current,
       )
+    result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
+      surface: "app",
+      login_challenge: issuance.transaction.login_challenge,
+      actor: clients(:one),
+      session_ref: "session-1",
+      auth_method: "passkey",
+    )
 
     travel 2.seconds do
-      get "/oauth/authorize", params: { login_challenge: issuance.transaction.login_challenge },
-                              headers: browser_headers
+      get "/oauth/authorize", params: { result: result.code }, headers: browser_headers
     end
 
     assert_response :bad_request
