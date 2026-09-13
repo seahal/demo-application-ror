@@ -23,7 +23,7 @@ module SurfaceChrome
   # repeated by every Inertia controller. `banner_domain` selects the banner stream the family
   # answers with (`auth` reads `sign`, `base` reads `acme`); nil opts out of the banner, which is
   # what the families without a banner region do. `footer_navigation` marks the families whose
-  # layout carries the cross-host footer links (dashboard/home, preference, settings).
+  # layout carries the cross-host footer links (home, preference, settings).
   FAMILY_CHROME = {
     "base" => { family_label: "BASE", banner_domain: :acme, footer_navigation: false },
     "auth" => { family_label: nil, banner_domain: :sign, footer_navigation: true },
@@ -160,7 +160,7 @@ module SurfaceChrome
       if chrome_logged_in?
         {
           label: chrome_t("sign.#{surface}.preferences.footer.dashboard"),
-          href: chrome_url("base_#{surface}_dashboard_url", base_options),
+          href: chrome_url("base_#{surface}_root_url", base_options),
         }
       else
         { label: chrome_t("sign.#{surface}.preferences.footer.home"),
