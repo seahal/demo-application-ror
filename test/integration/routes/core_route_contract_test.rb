@@ -192,10 +192,9 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "core/app/sign/outs", action: "destroy" },
-      { path: "http://#{CORE_APP_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sign/out", method: :delete)
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_APP_HOST}/sso/authorize", method: :get)
@@ -327,10 +326,9 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "core/com/sign/outs", action: "destroy" },
-      { path: "http://#{CORE_COM_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sign/out", method: :delete)
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_COM_HOST}/sso/authorize", method: :get)
@@ -463,10 +461,9 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "core/org/sign/outs", action: "destroy" },
-      { path: "http://#{CORE_ORG_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sign/out", method: :delete)
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{CORE_ORG_HOST}/sso/authorize", method: :get)

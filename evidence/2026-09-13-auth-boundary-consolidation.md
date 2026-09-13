@@ -145,6 +145,26 @@ false positive, Base/Core sign-out `destroy` route without action, Edit standalo
 4. Compose full stack (`podman-compose --in-pod=false`) not re-validated this session; host Valkey
    used.
 
+## Continuation 2026-09-14 mid-morning (JST)
+
+Tip `5bfdb01a7` full suite (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`, ended 2026-09-14 01:59
+JST): **12981 runs, 79008 assertions, 18 failures, 18 errors, 2 skips** in 667s. Prior same-day at
+`aabc399af`: 21 failures / 18 errors.
+
+Follow-up on that tip: Base/Core route contracts still expected DELETE `/sign/out` → `destroy` after
+the unused destroy action was retired; contracts updated to assert DELETE is unrouted (sign-out
+stays on show/new/edit/create).
+
+### Remaining blockers (tip suite)
+
+- Auth still hardcodes `sign-rp`; Base still hardcodes `base-rails-rp` (shared browser clients not
+  removable yet).
+- Ceremony/admission: auth region contract, OIDC authorization resume, sequence-gate
+  `register_result_and_issue_resume!` harness (`transaction` missing), identity authority guards,
+  Base authority route contracts.
+- Coverage-threshold OIDC edges / controller helpers; host-family + sign route-host; RI routing;
+  health revision; Vite/html title contracts; sessions controller leftover.
+
 ## Conclusion
 
 P5 Valkey authorization-code exchange cutover and seven-RP controller/route wiring are pushed on
