@@ -78,7 +78,7 @@ scope module: :core, as: :core do
       namespace :sign do
         # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
 
-        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
+        resource :termination, only: %i(show new edit create), path: "out", controller: :outs, as: :out
       end
     end
   end
@@ -158,7 +158,7 @@ scope module: :core, as: :core do
       namespace :sign do
         # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
 
-        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
+        resource :termination, only: %i(show new edit create), path: "out", controller: :outs, as: :out
       end
     end
   end
@@ -238,7 +238,7 @@ scope module: :core, as: :core do
       namespace :sign do
         # Canonical first-party RP start + callback (AuthBoundaryAuthorityMap).
 
-        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
+        resource :termination, only: %i(show new edit create), path: "out", controller: :outs, as: :out
       end
     end
   end

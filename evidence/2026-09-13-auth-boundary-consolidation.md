@@ -111,6 +111,40 @@ Largest remaining clusters: Edit Publishing `publishing_management_namespace` (~
 flat-ruby/architecture baseline drift. Shared browser clients still registered; Auth still hardcodes
 `sign-rp` for RP logout launch / `oidc_client_id`.
 
+## Continuation 2026-09-14 morning (JST)
+
+Pushed slices on `feature` (hooks green, no `--no-verify`):
+
+| Tip SHA (short) | Notes                                                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `a6c7bc195`     | Edit Publishing cell namespace no longer shadowed by `PublishingManagementCell`; compose/portability guards retargeted to single nonprod `valkey` (logical DBs 0/1/2). |
+| `e77f093c0`     | Auth ceremony admission uses `cross_host_redirect_allowed?`; Valkey nested packages allowlisted for flat-ruby; architecture baseline regenerated after visibility fix. |
+| `aabc399af`     | Social completion asserts Base `/` (retired `/dashboard`); staff Entra `/sign/in` redeems opaque admission.                                                            |
+
+Focused green before push: Publishing CMS 50/978; compose Valkey contracts 25/213;
+architecture/flat-ruby/redirect invariants 16/3112; social/Entra/dashboard leftovers 66/550.
+
+Full `bundle exec rails test` at `aabc399af` (host Postgres + Valkey on `:6379`,
+`RUBY_DEBUG_OPEN=false`, ended 2026-09-14 01:45 JST): **12981 runs, 78995 assertions, 21 failures,
+18 errors, 2 skips** in 698s. Down from `15a033bb7` (`31` failures / `54` errors).
+
+Follow-on uncommitted-at-evidence-write leftovers addressed next: social ceremony entry admission,
+logout completion harness vs Valkey notice store, Edit bare-controller inventory, health `/app`
+false positive, Base/Core sign-out `destroy` route without action, Edit standalone title allowlist.
+
+### Remaining blockers
+
+1. **Auth still hardcodes `sign-rp`** (`Auth::*::ApplicationController#oidc_client_id`, Auth OIDC
+   callbacks, Auth sign-out RP launcher, settings/passkey authorize). Base still hardcodes
+   `base-rails-rp`. Do not remove shared browser clients until those call-sites migrate;
+   native/content stay.
+2. **Ceremony/admission leftovers still red in the aabc399af suite** (auth region contract,
+   sequence-gate OIDC register, OIDC resume, identity authority guards, Base authority route
+   contracts, coverage-threshold OIDC edges, host-family/sign route-host).
+3. **Vite/html title / health revision / RI routing** contract drift outside the Auth RP cutover.
+4. Compose full stack (`podman-compose --in-pod=false`) not re-validated this session; host Valkey
+   used.
+
 ## Conclusion
 
 P5 Valkey authorization-code exchange cutover and seven-RP controller/route wiring are pushed on

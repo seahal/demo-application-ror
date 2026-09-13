@@ -722,12 +722,17 @@ class HealthEndpointsTest < ActionDispatch::IntegrationTest
       get "/api/v0/health.json", headers: { "Accept" => "application/json" }
     end
 
+    # Rails.root is `/app` in containerized CI; the health JSON namespace is
+    # `auth/app`, which contains that substring. Forbid path leaks with a
+    # trailing separator / quoted absolute path instead of the bare root.
     forbidden = [
-      Rails.root.to_s, "secret_key_base", "git", "AppPrincipalRecord", "PG::",
+      "secret_key_base", "git", "AppPrincipalRecord", "PG::",
       "StandardError", "localhost", "database", "failed", "readiness loaded",
     ]
 
     forbidden.each { |value| assert_not_includes response.body, value }
+    assert_no_match(%r{#{Regexp.escape(Rails.root.to_s)}/}, response.body)
+    assert_not_includes response.body, %("#{Rails.root}")
     assert_no_match(/\.rb:\d+|backtrace|Traceback/, response.body)
   end
 

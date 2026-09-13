@@ -92,7 +92,7 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                               only: %i(show new edit create destroy)
+                               only: %i(show new edit create)
       end
 
       # Base is the AS/IdP only: no first-party browser RP callback routes.
@@ -328,7 +328,7 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                               only: %i(show new edit create destroy)
+                               only: %i(show new edit create)
       end
 
       # Base is the AS/IdP only: no first-party browser RP callback routes.
@@ -542,7 +542,7 @@ scope(module: :base, as: :base) do
       # representation at GET /sign/out.
       scope path: :sign do
         resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
-                               only: %i(show new edit create destroy)
+                               only: %i(show new edit create)
       end
 
       # Base is the AS/IdP only: no first-party browser RP callback routes.
