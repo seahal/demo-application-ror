@@ -58,7 +58,10 @@ module Base
         end
 
         def sessions_index_props(sessions)
-          serialized = sessions.map { |session| serialize_session(session).merge(revoke: session_revoke_action(session)) }
+          serialized =
+            sessions.map { |session|
+              serialize_session(session).merge(revoke: session_revoke_action(session))
+            }
           {
             title: t("base.shared.identity.sessions.title"),
             empty_message: t("base.shared.identity.sessions.empty"),
@@ -68,7 +71,7 @@ module Base
               href: base_app_identity_path(ri: params[:ri]),
             },
             columns: session_columns,
-            bulk_revocations: serialized.any? { |session| session[:revoke] } ? bulk_revocation_props : nil,
+            bulk_revocations: (serialized.any? { |session| session[:revoke] }) ? bulk_revocation_props : nil,
             sessions: serialized,
           }
         end

@@ -4,14 +4,17 @@
 require "test_helper"
 
 class BaseIdentitySessionsTimestampTest < ActiveSupport::TestCase
-  SessionTimestampRecord = Struct.new(
-    :id, :public_id, :created_at, :last_used_at, :discarded_at,
-    keyword_init: true,
-  ) do
-    def emergency_authentication_context? = false
-    def authentication_context_value = AuthenticationContextValue.normal
-    def dbsc_enabled? = true
-  end
+  SessionTimestampRecord =
+    Struct.new(
+      :id, :public_id, :created_at, :last_used_at, :discarded_at,
+      keyword_init: true,
+    ) do
+      def emergency_authentication_context? = false
+
+      def authentication_context_value = AuthenticationContextValue.normal
+
+      def dbsc_enabled? = true
+    end
 
   setup do
     @original_preference = Actor.preferences
@@ -40,7 +43,7 @@ class BaseIdentitySessionsTimestampTest < ActiveSupport::TestCase
         assert_equal "10/12/2026 09:08 pm", row.fetch(:expires_at)
         assert_equal "Current session", row.fetch(:status)
         assert_equal "Normal", row.fetch(:mode) if surface == :org
-        refute row.key?(:mode) unless surface == :org
+        assert_not row.key?(:mode) unless surface == :org
       end
     end
   end

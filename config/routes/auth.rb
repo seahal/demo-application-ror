@@ -12,7 +12,6 @@ scope(module: :auth, as: :auth) do
   ) do
     scope(module: :app, as: :app) do
       root "roots#index"
-      resource :dashboard, only: :show
       resources :billings, only: :index
 
       namespace(:well_known, path: ".well-known") do
@@ -58,9 +57,7 @@ scope(module: :auth, as: :auth) do
       namespace :sign do
         resource :registration, only: :show, path: "up", controller: :ups, as: :up
         resource :session, only: :show, path: "in", controller: :ins, as: :in
-        resource :termination, only: %i(new edit create destroy), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
       namespace(:oidc) do
@@ -242,7 +239,6 @@ scope(module: :auth, as: :auth) do
   ) do
     scope(module: :com, as: :com) do
       root "roots#index"
-      resource :dashboard, only: :show
 
       namespace(:well_known, path: ".well-known") do
         resource(:jwks, only: :show, path: "jwks.json", format: false)
@@ -283,9 +279,7 @@ scope(module: :auth, as: :auth) do
       namespace :sign do
         resource :registration, only: :show, path: "up", controller: :ups, as: :up
         resource :session, only: :show, path: "in", controller: :ins, as: :in
-        resource :termination, only: %i(new edit create destroy), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
       namespace(:oidc) do
@@ -408,7 +402,6 @@ scope(module: :auth, as: :auth) do
   ) do
     scope(module: :org, as: :org) do
       root "roots#index"
-      resource :dashboard, only: :show
 
       namespace(:well_known, path: ".well-known") do
         resource(:jwks, only: :show, path: "jwks.json", format: false)
@@ -458,9 +451,7 @@ scope(module: :auth, as: :auth) do
       namespace :sign do
         resource :registration, only: :show, path: "up", controller: :ups, as: :up
         resource :session, only: :show, path: "in", controller: :ins, as: :in
-        resource :termination, only: %i(new edit create destroy), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
 
       namespace(:oidc) do

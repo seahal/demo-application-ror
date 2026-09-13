@@ -5,6 +5,7 @@ module Base
   module Identity
     class ActivityLogPresenter
       include ::SessionTimestampHelper
+
       RISK_RANKS = { "none" => 0, "low" => 1, "medium" => 2, "high" => 3, "critical" => 4 }.freeze
 
       def self.client_events
@@ -26,7 +27,10 @@ module Base
           ClientChronicleEvent::SOCIAL_LINKED => classification("security_change", "medium", "user"),
           ClientChronicleEvent::SOCIAL_UNLINKED => classification("security_change", "medium", "user"),
           ClientChronicleEvent::CREDENTIAL_SECURITY_TRANSITION => classification("security_change", "medium", "user"),
-          ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED => classification("session_security_alert", "high", "user_attention"),
+          ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED => classification(
+            "session_security_alert", "high",
+            "user_attention",
+          ),
         }.freeze
       end
       public_class_method :client_events
@@ -45,7 +49,10 @@ module Base
           OperatorChronicleEvent::SOCIAL_UNLINKED => classification("security_change", "medium", "user"),
           OperatorChronicleEvent::CREDENTIAL_SECURITY_TRANSITION => classification("security_change", "medium", "user"),
           OperatorChronicleEvent::PASSKEY_REGISTERED => classification("security_change", "medium", "user"),
-          OperatorChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED => classification("session_security_alert", "high", "user_attention"),
+          OperatorChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED => classification(
+            "session_security_alert", "high",
+            "user_attention",
+          ),
         }.freeze
       end
       public_class_method :operator_events
@@ -94,7 +101,7 @@ module Base
       private
 
       def classifications
-        @classifications ||= @surface == :org ? self.class.operator_events : self.class.client_events
+        @classifications ||= (@surface == :org) ? self.class.operator_events : self.class.client_events
       end
 
       def activity_key(activity, values)
@@ -125,7 +132,7 @@ module Base
       def detect_browser(user_agent)
         return "Edge" if user_agent.include?("Edg/")
         return "Chrome" if user_agent.include?("Chrome/")
-        return "Safari" if user_agent.include?("Safari/") && !user_agent.include?("Chrome/")
+        return "Safari" if user_agent.include?("Safari/") && user_agent.exclude?("Chrome/")
         return "Firefox" if user_agent.include?("Firefox/")
 
         nil

@@ -36,9 +36,9 @@ class RefreshTokenAbsoluteExpiryTest < ActiveSupport::TestCase
 
       result = AcmeRefreshTokenIssuer.call(refresh_token: refresh_token)
 
-      refute_predicate result, :success?
+      assert_not_predicate result, :success?
       assert_equal :inactive_token, result.reason
-      refute token.reload.currently_usable?
+      assert_not_predicate token.reload, :currently_usable?
     end
   end
 

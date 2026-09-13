@@ -41,7 +41,7 @@ module Base
             },
             empty_message: t("base.shared.identity.activities.empty"),
             columns: activity_columns,
-            activities: activities.map { |activity| activity_log.present(activity) }.compact,
+            activities: activities.filter_map { |activity| activity_log.present(activity) },
           }
         end
 

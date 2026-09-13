@@ -114,8 +114,11 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
       ClientChronicle.create!(
         subject_id: client.id.to_s, subject_type: "Client", event_id: ClientChronicleEvent::LOGIN_SUCCESS,
         context: {
-          provider: "google", auth_method: "social", oidc_client_id: "private-client-id",
-          "sign-rp": "internal-rp", social_session_limitation: "private-policy",
+          provider: "google",
+          auth_method: "social",
+          oidc_client_id: "private-client-id",
+          "sign-rp": "internal-rp",
+          social_session_limitation: "private-policy",
           user_agent: "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/128.0",
         },
         ip_address: "10.2.3.4", occurred_at: 10.minutes.ago,
@@ -129,7 +132,7 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
     BaseSelectorAuthority.prepare(surface: :app, principal: client, session: token)
     access_token = AuthenticationToken.encode(
       client, host: host, session_public_id: token.public_id,
-      resource_type: "client", jwt_issuer_id: "surface:BASE_APP",
+              resource_type: "client", jwt_issuer_id: "surface:BASE_APP",
     )
     cookies[AuthenticationBase::ACCESS_COOKIE_KEY] = access_token
 
@@ -144,6 +147,7 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal %w(occurred_at activity device source risk), inertia_props.fetch("columns").keys
     rows = inertia_props.fetch("activities")
+
     assert_equal 1, rows.length
     assert_equal "Googleでサインイン", rows.first.fetch("activity")
     assert_equal "低", rows.first.fetch("risk")
@@ -164,8 +168,11 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
       ClientChronicle.create!(
         subject_id: visitor.id.to_s, subject_type: "Visitor", event_id: ClientChronicleEvent::LOGIN_SUCCESS,
         context: {
-          provider: "google", auth_method: "social", oidc_client_id: "private-client-id",
-          "sign-rp": "internal-rp", social_session_limitation: "private-policy",
+          provider: "google",
+          auth_method: "social",
+          oidc_client_id: "private-client-id",
+          "sign-rp": "internal-rp",
+          social_session_limitation: "private-policy",
           user_agent: "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/128.0",
         },
         ip_address: "10.2.3.4", occurred_at: 10.minutes.ago,
@@ -199,10 +206,12 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("base.shared.identity.activities.title"), inertia_props.fetch("title")
     assert_equal %w(occurred_at activity device source risk), inertia_props.fetch("columns").keys
     rows = inertia_props.fetch("activities")
+
     assert_equal ["サインインに失敗", "Googleでサインイン"], rows.map { |row| row.fetch("activity") }
     assert_equal ["中", "低"], rows.map { |row| row.fetch("risk") }
     assert_equal %w(occurred_at activity device source risk risk_rank), rows.last.keys
-    %w(10.2.3.4 192.168.1.5 private-client-id internal-rp private-policy internal-auth-value refresh-secret-sentinel).each do |value|
+    %w(10.2.3.4 192.168.1.5 private-client-id internal-rp private-policy internal-auth-value
+       refresh-secret-sentinel).each do |value|
       assert_not_includes response.body, value
     end
   end
@@ -219,8 +228,11 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
       OperatorChronicle.create!(
         subject_id: operator.id.to_s, subject_type: "Operator", event_id: OperatorChronicleEvent::LOGIN_SUCCESS,
         context: {
-          provider: "google", auth_method: "social", oidc_client_id: "private-operator-client",
-          "sign-rp": "internal-operator-rp", social_session_limitation: "private-policy",
+          provider: "google",
+          auth_method: "social",
+          oidc_client_id: "private-operator-client",
+          "sign-rp": "internal-operator-rp",
+          social_session_limitation: "private-policy",
           user_agent: "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/128.0",
         },
         ip_address: "172.16.0.2", occurred_at: 10.minutes.ago,
@@ -254,10 +266,12 @@ class BaseIdentityReadOnlyPagesTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("base.shared.identity.activities.title"), inertia_props.fetch("title")
     assert_equal %w(occurred_at activity device source risk), inertia_props.fetch("columns").keys
     rows = inertia_props.fetch("activities")
+
     assert_equal ["サインインに失敗", "Googleでサインイン"], rows.map { |row| row.fetch("activity") }
     assert_equal ["中", "低"], rows.map { |row| row.fetch("risk") }
     assert_equal %w(occurred_at activity device source risk risk_rank), rows.last.keys
-    %w(172.16.0.2 10.0.0.5 private-operator-client internal-operator-rp private-policy internal-auth-value refresh-secret-sentinel).each do |value|
+    %w(172.16.0.2 10.0.0.5 private-operator-client internal-operator-rp private-policy internal-auth-value
+       refresh-secret-sentinel).each do |value|
       assert_not_includes response.body, value
     end
   end

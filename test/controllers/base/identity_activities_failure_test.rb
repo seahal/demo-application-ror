@@ -36,7 +36,8 @@ class BaseIdentityActivitiesFailureTest < ActiveSupport::TestCase
     end
   end
 
-  [Base::App::Identity::ActivitiesController, Base::Com::Identity::ActivitiesController, Base::Org::Identity::ActivitiesController].each do |klass|
+  [Base::App::Identity::ActivitiesController, Base::Com::Identity::ActivitiesController,
+   Base::Org::Identity::ActivitiesController,].each do |klass|
     test "#{klass.name} still renders the page with an empty list when the store is unavailable" do
       harness = harness_for(klass)
 

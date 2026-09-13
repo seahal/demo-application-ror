@@ -20,19 +20,24 @@ class RefreshTokenReuseActivityRecorderTest < ActiveSupport::TestCase
 
       assert RefreshTokenReuseActivityRecorder.call(token: token, result: "token_family_revoked")
 
-      event_model = surface == :org ? OperatorChronicle : ClientChronicle
-      event_id = surface == :org ? OperatorChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED : ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED
-      record = ChronicleRecord.connected_to(role: :writing) do
-        event_model.where(event_id: event_id, subject_id: activity_subject_id(token)).order(occurred_at: :desc).first
-      end
+      event_model = (surface == :org) ? OperatorChronicle : ClientChronicle
+      event_id = (surface == :org) ? OperatorChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED : ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED
+      record =
+        ChronicleRecord.connected_to(role: :writing) do
+          event_model.where(
+            event_id: event_id,
+            subject_id: activity_subject_id(token),
+          ).order(occurred_at: :desc).first
+        end
 
       assert_predicate record, :present?
       context = record.context.deep_stringify_keys
+
       assert_equal %w(generation result surface token_family_id), context.keys.sort
       assert_equal surface.to_s, context.fetch("surface")
       assert_equal "token_family_revoked", context.fetch("result")
-      refute_includes context.values.join(" "), raw_refresh_token
-      refute_includes context.values.join(" "), token.refresh_token_digest.to_s
+      assert_not_includes context.values.join(" "), raw_refresh_token
+      assert_not_includes context.values.join(" "), token.refresh_token_digest.to_s
     end
   end
 
@@ -43,14 +48,20 @@ class RefreshTokenReuseActivityRecorderTest < ActiveSupport::TestCase
     when :app
       client = clients(:one)
       client.update!(status_id: ClientStatus::ACTIVE)
-      ClientToken.create!(user: client, user_token_kind_id: ClientTokenKind::BROWSER_WEB,
-                           user_token_status_id: ClientTokenStatus::ACTIVE, discarded_at: 1.day.from_now)
+      ClientToken.create!(
+        user: client, user_token_kind_id: ClientTokenKind::BROWSER_WEB,
+        user_token_status_id: ClientTokenStatus::ACTIVE, discarded_at: 1.day.from_now,
+      )
     when :com
-      VisitorToken.create!(visitor: visitors(:reserved_visitor), visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB,
-                            visitor_token_status_id: VisitorTokenStatus::ACTIVE, discarded_at: 1.day.from_now)
+      VisitorToken.create!(
+        visitor: visitors(:reserved_visitor), visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB,
+        visitor_token_status_id: VisitorTokenStatus::ACTIVE, discarded_at: 1.day.from_now,
+      )
     when :org
-      OperatorToken.create!(staff: operators(:one), staff_token_kind_id: OperatorTokenKind::BROWSER_WEB,
-                             staff_token_status_id: OperatorTokenStatus::ACTIVE, discarded_at: 1.day.from_now)
+      OperatorToken.create!(
+        staff: operators(:one), staff_token_kind_id: OperatorTokenKind::BROWSER_WEB,
+        staff_token_status_id: OperatorTokenStatus::ACTIVE, discarded_at: 1.day.from_now,
+      )
     end
   end
 

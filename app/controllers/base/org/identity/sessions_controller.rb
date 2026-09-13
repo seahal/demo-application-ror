@@ -23,7 +23,8 @@ module Base
           authorize!(@session)
           render inertia: true, props: {
             title: t("base.shared.identity.sessions.title"),
-            back_link: { label: t("sign.org.settings.show.back"), href: base_org_identity_sessions_path(ri: params[:ri]) },
+            back_link: { label: t("sign.org.settings.show.back"),
+                         href: base_org_identity_sessions_path(ri: params[:ri]), },
             expires_at_description: t("base.shared.identity.sessions.expires_at_description"),
             session: serialize_session(@session),
             columns: session_columns,

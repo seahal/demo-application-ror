@@ -75,9 +75,7 @@ scope module: :core, as: :core do
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
       namespace :sign do
-        resource :termination, only: %i(new edit create), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
     end
   end
@@ -154,9 +152,7 @@ scope module: :core, as: :core do
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
       namespace :sign do
-        resource :termination, only: %i(new edit create), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
     end
   end
@@ -233,9 +229,7 @@ scope module: :core, as: :core do
 
       # Canonical browser sign-out ceremony (see config/routes/auth.rb for the pattern).
       namespace :sign do
-        resource :termination, only: %i(new edit create), path: "out", controller: :outs, as: :out do
-          resource :completion, only: :show, path: "complete", module: :outs
-        end
+        resource :termination, only: %i(show new edit create destroy), path: "out", controller: :outs, as: :out
       end
     end
   end

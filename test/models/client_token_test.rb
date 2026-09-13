@@ -463,6 +463,7 @@ class ClientTokenTest < ActiveSupport::TestCase
     assert_in_delta 30.days.from_now.to_f, Float(token.discarded_at), 2
     absolute_expiry = token.discarded_at
     token.rotate_refresh_token!(discarded_at: absolute_expiry + 1.day)
+
     assert_equal absolute_expiry.to_i, token.discarded_at.to_i
   end
 

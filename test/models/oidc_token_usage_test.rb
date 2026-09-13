@@ -138,10 +138,12 @@ class OidcTokenUsageTest < ActiveSupport::TestCase
       )
 
       usage.issue_refresh_token!(expires_at: absolute_expiry + 2.days)
+
       assert_operator usage.reload.refresh_token_expires_at, :<=, absolute_expiry
       assert_equal absolute_expiry.to_i, usage.refresh_token_expires_at.to_i
 
       usage.rotate_refresh_token!(expires_at: absolute_expiry + 3.days)
+
       assert_operator usage.reload.refresh_token_expires_at, :<=, absolute_expiry
       assert_equal absolute_expiry.to_i, usage.refresh_token_expires_at.to_i
     end

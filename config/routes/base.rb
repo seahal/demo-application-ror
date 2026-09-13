@@ -17,9 +17,7 @@ scope(module: :base, as: :base) do
       # whole endpoint.
       resource :mcp, only: :create
 
-      resource :lobby, only: :show
       resource :welcome, only: :show
-      resource :dashboard, only: :show
       resource :selector, only: %i(show update)
       resource :switcher, only: %i(show update)
       resources :billings, only: :index
@@ -90,9 +88,11 @@ scope(module: :base, as: :base) do
       get("service-worker", to: "/rails/pwa#service_worker", as: :pwa_service_worker)
       get("offline", to: "/rails/pwa#offline", as: :pwa_offline)
 
-      # Base owns the post-authentication sign-out confirmation flow. Completion is PRG to /lobby.
+      # Base owns the post-authentication sign-out confirmation flow. Completion is a one-shot
+      # representation at GET /sign/out.
       scope path: :sign do
-        resource :termination, path: "out", controller: :sign_outs, as: :sign_out, only: %i(new edit create)
+        resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
+                 only: %i(show new edit create destroy)
       end
 
       namespace(:oidc) do
@@ -255,9 +255,7 @@ scope(module: :base, as: :base) do
       # whole endpoint.
       resource :mcp, only: :create
 
-      resource :lobby, only: :show
       resource :welcome, only: :show
-      resource :dashboard, only: :show
       resource :selector, only: %i(show update)
       resource :switcher, only: %i(show update)
       resources :accounts, only: %i(index show)
@@ -325,9 +323,11 @@ scope(module: :base, as: :base) do
       get("service-worker", to: "/rails/pwa#service_worker", as: :pwa_service_worker)
       get("offline", to: "/rails/pwa#offline", as: :pwa_offline)
 
-      # Base owns the post-authentication sign-out confirmation flow. Completion is PRG to /lobby.
+      # Base owns the post-authentication sign-out confirmation flow. Completion is a one-shot
+      # representation at GET /sign/out.
       scope path: :sign do
-        resource :termination, path: "out", controller: :sign_outs, as: :sign_out, only: %i(new edit create)
+        resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
+                 only: %i(show new edit create destroy)
       end
 
       namespace(:oidc) do
@@ -433,9 +433,7 @@ scope(module: :base, as: :base) do
       # whole endpoint.
       resource :mcp, only: :create
 
-      resource :lobby, only: :show
       resource :welcome, only: :show
-      resource :dashboard, only: :show
       resource :selector, only: %i(show update)
       resource :switcher, only: %i(show update)
       resource :preference, only: :show
@@ -538,9 +536,11 @@ scope(module: :base, as: :base) do
       end
       resources :billing, only: :index
 
-      # Base owns the post-authentication sign-out confirmation flow. Completion is PRG to /lobby.
+      # Base owns the post-authentication sign-out confirmation flow. Completion is a one-shot
+      # representation at GET /sign/out.
       scope path: :sign do
-        resource :termination, path: "out", controller: :sign_outs, as: :sign_out, only: %i(new edit create)
+        resource :termination, path: "out", controller: :sign_outs, as: :sign_out,
+                 only: %i(show new edit create destroy)
       end
 
       namespace(:oidc) do

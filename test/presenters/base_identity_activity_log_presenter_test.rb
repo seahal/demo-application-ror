@@ -10,8 +10,11 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
     activity = ActivityRecord.new(
       event_id: ClientChronicleEvent::LOGIN_SUCCESS,
       context: {
-        "provider" => "google", "auth_method" => "social", "oidc_client_id" => "private-client",
-        "sign-rp" => "internal-rp", "social_session_limitation" => "internal-policy",
+        "provider" => "google",
+        "auth_method" => "social",
+        "oidc_client_id" => "private-client",
+        "sign-rp" => "internal-rp",
+        "social_session_limitation" => "internal-policy",
         "user_agent" => "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/128.0",
       },
       ip_address: "10.2.3.4",
@@ -26,9 +29,9 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
     assert_equal "Firefox / Linux", row.fetch(:device)
     assert_equal "場所を確認できません", row.fetch(:source)
     assert_equal "低", row.fetch(:risk)
-    refute_includes row.values.join(" "), "10.2.3.4"
-    refute_includes row.values.join(" "), "private-client"
-    refute_includes row.values.join(" "), "social"
+    assert_not_includes row.values.join(" "), "10.2.3.4"
+    assert_not_includes row.values.join(" "), "private-client"
+    assert_not_includes row.values.join(" "), "social"
   end
 
   test "keeps provider account creation distinct from a sign-in" do
@@ -46,7 +49,10 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
 
   test "risk ordering is explicit and refresh success stays internal independently of risk" do
     presenter = Base::Identity::ActivityLogPresenter.new(surface: :app)
-    refresh = ActivityRecord.new(event_id: ClientChronicleEvent::TOKEN_REFRESHED, context: {}, occurred_at: Time.current)
+    refresh = ActivityRecord.new(
+      event_id: ClientChronicleEvent::TOKEN_REFRESHED, context: {},
+      occurred_at: Time.current,
+    )
 
     assert_operator presenter.risk_rank("none"), :<, presenter.risk_rank("low")
     assert_operator presenter.risk_rank("low"), :<, presenter.risk_rank("medium")
@@ -54,7 +60,7 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
     assert_operator presenter.risk_rank("high"), :<, presenter.risk_rank("critical")
     assert_nil presenter.present(refresh)
     assert_includes presenter.visible_event_ids, ClientChronicleEvent::LOGIN_SUCCESS
-    refute_includes presenter.visible_event_ids, ClientChronicleEvent::TOKEN_REFRESHED
+    assert_not_includes presenter.visible_event_ids, ClientChronicleEvent::TOKEN_REFRESHED
   end
 
   test "attention events remain user visible with their independent risk labels" do
@@ -78,8 +84,8 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
     assert_equal "High", reuse_row.fetch(:risk)
     assert_includes presenter.visible_event_ids, ClientChronicleEvent::STEP_UP_FAILED
     assert_includes presenter.visible_event_ids, ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED
-    refute_includes failed_row.values.join(" "), "email_otp"
-    refute_includes failed_row.values.join(" "), "123456"
-    refute_includes reuse_row.values.join(" "), "family-internal"
+    assert_not_includes failed_row.values.join(" "), "email_otp"
+    assert_not_includes failed_row.values.join(" "), "123456"
+    assert_not_includes reuse_row.values.join(" "), "family-internal"
   end
 end

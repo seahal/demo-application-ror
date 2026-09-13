@@ -57,5 +57,4 @@ class SurfaceSeamPathsThirdTest < ActiveSupport::TestCase
 
     assert_includes path, "pub-9"
   end
-
 end

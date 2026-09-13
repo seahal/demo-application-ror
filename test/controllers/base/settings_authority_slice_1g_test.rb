@@ -35,6 +35,7 @@ class BaseSettingsAuthoritySlice1GTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     rows = inertia_props.fetch("activities")
+
     assert_equal 2, rows.size
     assert_equal ["サインインに失敗", "サインイン"], rows.map { |row| row.fetch("activity") }
     assert_equal ["中", "低"], rows.map { |row| row.fetch("risk") }

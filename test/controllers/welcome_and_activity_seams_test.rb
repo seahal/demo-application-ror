@@ -40,6 +40,4 @@ class WelcomeAndActivitySeamsTest < ActiveSupport::TestCase
       assert_predicate props.fetch(:next_link).fetch(:href), :present?
     end
   end
-
-
 end

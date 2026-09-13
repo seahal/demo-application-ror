@@ -24,7 +24,8 @@ module Base
           row = serialize_session_row(@session)
           render inertia: true, props: {
             title: t("base.shared.identity.sessions.title"),
-            back_link: { label: t("sign.app.settings.show.back"), href: base_com_identity_sessions_path(ri: params[:ri]) },
+            back_link: { label: t("sign.app.settings.show.back"),
+                         href: base_com_identity_sessions_path(ri: params[:ri]), },
             expires_at_description: t("base.shared.identity.sessions.expires_at_description"),
             session: row,
             columns: session_columns,

@@ -52,14 +52,17 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
     create_other_org_session(principal, except: token) if surface == :org
     access_token = authenticate_session(surface, principal, token, host, resource_type)
     open_session do |test_session|
-      test_session.get sessions_path(surface, host), headers: request_headers(host, token, access_token)
+      test_session.get(sessions_path(surface, host), headers: request_headers(host, token, access_token))
+
       assert_equal 200, test_session.response.status
       props = inertia_props_from(test_session.response.body)
       rows = props.fetch("sessions")
       row = rows.find { |session| session.fetch("status") == "現在のセッション" }
+
       assert_predicate row, :present?
       expected_keys = %w(created device expires_at last_activity revoke status)
       expected_keys << "mode" if surface == :org
+
       assert_equal expected_keys.sort, row.keys.sort
       assert_equal "不明なデバイス", row.fetch("device")
       assert_match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/, row.fetch("created"))
@@ -67,15 +70,17 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
       assert_equal "現在のセッション", row.fetch("status")
       assert_nil row.fetch("revoke")
       assert_equal "緊急アクセス", row.fetch("mode") if surface == :org
-      refute row.key?("public_id")
-      refute row.key?("kind")
-      refute row.key?("binding")
-      refute row.key?("refresh_expires")
-      refute row.key?("refresh_token_generation")
+
+      assert_not row.key?("public_id")
+      assert_not row.key?("kind")
+      assert_not row.key?("binding")
+      assert_not row.key?("refresh_expires")
+      assert_not row.key?("refresh_token_generation")
       assert_equal "このセッションはこの時刻に終了します。この期限は延長されません。",
                    props.fetch("expires_at_description")
 
       other_row = rows.find { |session| session.fetch("revoke").present? }
+
       assert_predicate other_row, :present?
       other_href = URI.join("https://#{host}", other_row.fetch("revoke").fetch("href")).to_s
       other_public_id = URI.parse(other_href).path.split("/").last
@@ -83,20 +88,25 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
       if surface == :org
         assert_equal "通常", other_row.fetch("mode")
         assert_predicate other_token, :dbsc_enabled?
-        refute token.dbsc_enabled?
+        assert_not_predicate token, :dbsc_enabled?
       end
-      test_session.delete other_href, headers: request_headers(host, token, access_token)
+      test_session.delete(other_href, headers: request_headers(host, token, access_token))
+
       assert_equal 303, test_session.response.status
       assert_predicate other_token.reload, :revoked?
 
-      test_session.delete session_path(surface, token.public_id, host), headers: request_headers(host, token, access_token)
+      test_session.delete(
+        session_path(surface, token.public_id, host),
+        headers: request_headers(host, token, access_token),
+      )
+
       assert_equal 303, test_session.response.status
-      refute token.reload.revoked?
+      assert_not_predicate token.reload, :revoked?
     end
   end
 
   def assert_expired_session_cannot_authenticate(surface)
-    travel_to Time.utc(2026, 9, 13, 9, 0)
+    travel_to(Time.utc(2026, 9, 13, 9, 0))
     principal, token, host, resource_type = create_actor_session_token(surface)
     token.update!(discarded_at: 1.hour.from_now)
     absolute_expiry = token.discarded_at
@@ -104,16 +114,18 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
     BaseSelectorAuthority.prepare(surface: surface, principal: principal, session: token)
     access_token = AuthenticationToken.encode(
       principal, host: host, session_public_id: token.public_id, resource_type: resource_type,
-      jwt_issuer_id: "surface:BASE_#{surface.to_s.upcase}", expires_at: 2.hours.from_now,
-      authentication_context: surface == :org ? token.authentication_context : nil,
+                 jwt_issuer_id: "surface:BASE_#{surface.to_s.upcase}", expires_at: 2.hours.from_now,
+                 authentication_context: (surface == :org) ? token.authentication_context : nil,
     )
     payload = JWT.decode(access_token, nil, false).first
-    assert_operator Time.at(payload.fetch("exp")), :>, absolute_expiry
 
-    travel_to absolute_expiry + 1.second
+    assert_operator Time.zone.at(payload.fetch("exp")), :>, absolute_expiry
+
+    travel_to(absolute_expiry + 1.second)
     open_session do |test_session|
-      test_session.get sessions_path(surface, host), headers: request_headers(host, token, access_token)
-      refute_equal 200, test_session.response.status
+      test_session.get(sessions_path(surface, host), headers: request_headers(host, token, access_token))
+
+      assert_not_equal 200, test_session.response.status
     end
   ensure
     travel_back
@@ -121,6 +133,7 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
 
   def inertia_props_from(body)
     script = Nokogiri::HTML(body).at_css("script[data-page='app']")
+
     assert_predicate script, :present?
     JSON.parse(script.text).fetch("props")
   end
@@ -160,8 +173,10 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
   end
 
   def create_other_com_session(visitor)
-    VisitorToken.create!(visitor: visitor, visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB,
-                          visitor_token_status_id: VisitorTokenStatus::ACTIVE, discarded_at: 1.day.from_now)
+    VisitorToken.create!(
+      visitor: visitor, visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB,
+      visitor_token_status_id: VisitorTokenStatus::ACTIVE, discarded_at: 1.day.from_now,
+    )
   end
 
   def create_other_org_session(operator, except:)
@@ -180,8 +195,8 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
     BaseSelectorAuthority.prepare(surface: surface, principal: principal, session: token)
     AuthenticationToken.encode(
       principal, host: host, session_public_id: token.public_id, resource_type: resource_type,
-      jwt_issuer_id: "surface:BASE_#{surface.to_s.upcase}",
-      authentication_context: surface == :org ? token.authentication_context : nil,
+                 jwt_issuer_id: "surface:BASE_#{surface.to_s.upcase}",
+                 authentication_context: (surface == :org) ? token.authentication_context : nil,
     )
   end
 

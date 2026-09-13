@@ -40,7 +40,7 @@ module Base
               href: base_org_identity_path(ri: params[:ri]),
             },
             columns: activity_columns,
-            activities: activities.map { |activity| activity_log.present(activity) }.compact,
+            activities: activities.filter_map { |activity| activity_log.present(activity) },
           }
         end
 

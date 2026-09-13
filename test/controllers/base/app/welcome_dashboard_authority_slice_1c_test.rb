@@ -33,7 +33,7 @@ class Base::App::WelcomeDashboardAuthoritySlice1CTest < ActionDispatch::Integrat
     assert_response :success
     assert_equal "base/app/dashboards/show", inertia_component
     assert_equal I18n.t("base.shared.dashboard.title", locale: :ja), inertia_props.fetch("title")
-    refute inertia_props.key?("description")
+    assert_not inertia_props.key?("description")
 
     links = inertia_props.fetch("sections").flat_map { |section| section.fetch("items") }
     hrefs = links.map { |link| link.fetch("href") }
