@@ -10,10 +10,9 @@ Phase 0 changed two files and no code:
 
 - `adr/api-versioning-and-client-conventions.md` — section 4 amended from OpenAPI 3.2.x to 3.0.4,
   with an "Amendment 2026-08-22" section carrying the tooling evidence, the reversal condition, and
-  the three accuracy defects this audit found. Sections 1 through 3 are unchanged.
-- `plans/backlog/api-schema-contract-documentation-plan.md` — marked superseded by this document.
-  Its stale premise is corrected inline, its selective-coverage policy is recorded as accepted and
-  carried forward, and its four follow-up items are marked done, superseded, or planned.
+  the three accuracy defects this audit found. Sections 1 through 3 are unchanged. Its stale premise
+  is corrected inline, its selective-coverage policy is recorded as accepted and carried forward,
+  and its four follow-up items are marked done, superseded, or planned.
 
 ## 1. Executive summary
 
@@ -710,10 +709,10 @@ enabling validation middleware there would be enabling it in production.
 
 **Phase 0 — ADR amendment and this document. Completed 2026-08-22.** Amend
 `adr/api-versioning-and-client-conventions.md` §4 from 3.2.x to 3.0.4 with the tooling rationale,
-source URLs, access date, and revisit condition. Correct or archive
-`plans/backlog/api-schema-contract-documentation-plan.md`, whose stated premise (that
-`public/openapi.yml` documents only `/v0/health`) is no longer true. Requires explicit approval,
-because amending an accepted ADR is a decision, not an implementation detail.
+source URLs, access date, and revisit condition. Correct or archive the earlier API schema
+documentation plan (since removed), whose stated premise (that `public/openapi.yml` documents only
+`/v0/health`) is no longer true. Requires explicit approval, because amending an accepted ADR is a
+decision, not an implementation detail.
 
 **Phase A — restructure and repair. Completed 2026-08-22, except the CI job (blocked, see below).**
 Created `openapi/` with shared components and three surface roots at 3.0.4; bundled to

@@ -53,9 +53,8 @@ Current identity authority decision:
   RP and Acme as the only IdP / Authorization Server.
 
 Implementation note: the accepted Acme / Sign / Core / Base / Palm boundary is ahead of parts of the
-current code and older plans. Active implementation work is tracked in
-`plans/active/acme-sign-core-base-port-implementation.md`; existing Rails-only compatibility routes
-or storage do not create a competing ADR-level authority assignment.
+current code and older plans. Active implementation work is tracked in GH issue #829; existing
+Rails-only compatibility routes or storage do not create a competing ADR-level authority assignment.
 
 Superseded IdP/RP-centered ADRs:
 
@@ -83,8 +82,9 @@ Current API design decisions:
   identifier namespace, the two permitted extension members, and the protocol exemption list (OAuth
   / OIDC / WebAuthn / DBSC / MCP JSON-RPC / health / `.well-known`).
 - `adr/api-collection-offset-pagination.md` — current pagination for public publishing collections:
-  Pagy offset pages (`?page=`), server-controlled page size, `{ data, page: { current, previous,
-  next, last } }`. Supersedes the signed-cursor mechanism in `adr/api-collection-contract.md`.
+  Pagy offset pages (`?page=`), server-controlled page size,
+  `{ data, page: { current, previous, next, last } }`. Supersedes the signed-cursor mechanism in
+  `adr/api-collection-contract.md`.
 - `adr/api-collection-contract.md` — historical `{data, page}` envelope and the 2026-08-22 signed
   cursor implementation. Envelope and unwrapped single-resource object remain; cursor pagination
   does not.
@@ -100,8 +100,8 @@ Current database naming decisions:
 
 - `adr/global-regional-database-ownership.md` — accepted Global / Regional database ownership map:
   `*_zenith`, `*_ticket`, `*_setting`, `*_signal`, `avatar`, and `publishing` are Global-only;
-  `chronicle`, `occurrence`, `primary`, and `queue` exist as independent (never shared) databases
-  in both repositories; Regional gets one new application database. Resolves the `M1` question in
+  `chronicle`, `occurrence`, `primary`, and `queue` exist as independent (never shared) databases in
+  both repositories; Regional gets one new application database. Resolves the `M1` question in
   `evidence/2026-09-08-global-regional-database-split-assessment.md` — `*_zenith` is Global
   canonical Account / Identity / Organization authority. Retires the reserved-`*_principal`
   "regional-ready storage" role.

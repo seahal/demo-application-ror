@@ -252,7 +252,7 @@ Do not:
 - `adr/core-browser-jwt-cookie-transport-and-nextjs-zero-cookie-boundary.md`
 - `adr/core-browser-credential-transport.md`
 - `docs/architecture/acme-sign-core-base-port.md`
-- `plans/active/acme-sign-core-base-port-implementation.md`
+- GH issue #829
 - `adr/identity-authority-boundary.md`
 - `adr/acme-session-and-token-authority.md`
 - `adr/sign-residual-idp-surface-retirement.md`

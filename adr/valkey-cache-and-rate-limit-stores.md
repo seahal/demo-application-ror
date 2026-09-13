@@ -22,8 +22,8 @@ That gap was the problem. A database-backed cache never evicts under memory pres
 restarts, so at the call site `Rails.cache.write` is indistinguishable from durable storage — and
 state accumulated in it that no cache should hold. `OidcClientAssertionJwt` tracked consumed
 client-assertion JTIs in `Rails.cache`: replay prevention resting on a store whose contract permits
-eviction, and which only worked because the implementation happened to be a table. The audit in
-`plans/audit-all-rails-cache-write-usage-logical-popcorn.md` records the same pattern elsewhere.
+eviction, and which only worked because the implementation happened to be a table. The same pattern
+existed at other `Rails.cache.write` call sites.
 
 Rate limiting had already been moved to a Valkey store of its own (`RATE_LIMIT_REDIS_URL`) precisely
 because counters are disposable.

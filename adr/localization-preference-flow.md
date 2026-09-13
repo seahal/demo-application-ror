@@ -13,11 +13,11 @@ Accepted on 2026-04-07.
 > the default `ja`.
 
 > **Regional-bundle reset (2026-09-09, currency added 2026-09-11):** A `/preference/region` write
-> rewrites all region-owned locale defaults — language, date format, clock format, and currency —
-> to the region's values in one transaction and marks each explicit (`jp` → `ja` / ISO / 24h /
-> JPY, `us` → `en` / US / 12h / USD). This extends the region → language force-update that already
-> existed. Each value stays overridable on its own screen. See
-> `docs/architecture/preference.md` "Region is a regional-bundle reset".
+> rewrites all region-owned locale defaults — language, date format, clock format, and currency — to
+> the region's values in one transaction and marks each explicit (`jp` → `ja` / ISO / 24h / JPY,
+> `us` → `en` / US / 12h / USD). This extends the region → language force-update that already
+> existed. Each value stays overridable on its own screen. See `docs/architecture/preference.md`
+> "Region is a regional-bundle reset".
 
 ## Context
 
@@ -91,5 +91,4 @@ preference access token.
 
 ## Related
 
-- Former plan: `plans/backlog/gh631-localization-preference-flow.md`
 - Related contract: `adr/theme-preference-cookie-and-param-contract.md`

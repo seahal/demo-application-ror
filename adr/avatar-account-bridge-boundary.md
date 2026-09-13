@@ -145,7 +145,7 @@ follow the bridge data model PR and before any cleanup that could strand the las
 ## Related
 
 - `docs/architecture/avatar-account-bridge.md`
-- `plans/active/avatar-account-bridge-implementation-plan.md`
+- GH issue #831
 - `adr/surface-account-collective-model-naming.md`
 - `adr/account-workspace-avatar-billing.md`
 - `docs/architecture/sns-subject-resource-decision-record.md`

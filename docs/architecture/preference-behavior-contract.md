@@ -215,6 +215,19 @@ Regression coverage should include:
 | Cache leakage                             | Effective preferences must not be cached across users or surfaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Cross-surface before_action parity        | The app/com/org `edge/v0/cookies` controllers must skip the same before_actions that are actually defined on their respective surface `ApplicationController` (e.g. `transparent_refresh_access_token`); a missing skip on one surface can trigger a token-refresh side effect on this otherwise side-effect-free JSON endpoint. Skips for callbacks that a surface's `ApplicationController` never defines (e.g. `enforce_withdrawal_gate!` on org, which has no staff withdrawal concept) are intentionally surface-specific and are not a parity violation. |
 
+## Concurrent refresh replay grace
+
+One page load can send several requests carrying the same preference refresh cookie. When a request
+presents a parent token that another request rotated within
+`SingleUseToken::PREFERENCE_REFRESH_GRACE_WINDOW` (30 seconds), it is a benign sibling, not a
+compromise:
+
+- The grace path adopts the replacement read-only and MUST NOT write or clear cookies. Only the
+  rotating request holds the raw replacement token, and its `Set-Cookie` decides the browser state.
+- Rotation is detected with `replaced_by_id != id`, because a new record's `replaced_by_id` points
+  to itself.
+- Reuse after the window is still treated as compromise.
+
 ## Sign-out credential rotation
 
 `app/controllers/concerns/preference_sign_out_rotation.rb`, included on all three surfaces via

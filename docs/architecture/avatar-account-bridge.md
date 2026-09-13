@@ -99,6 +99,6 @@ The bridge path to record is `Avatar -> Persona` through `AvatarPersonaBinding`.
 ## Related
 
 - `adr/avatar-account-bridge-boundary.md`
-- `plans/active/avatar-account-bridge-implementation-plan.md`
+- GH issue #831
 - `adr/surface-account-collective-model-naming.md`
 - `docs/architecture/sns-subject-resource-decision-record.md`

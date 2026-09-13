@@ -8,19 +8,19 @@ targets) **Type:** investigation only. No production code was changed by this au
 
 Every claim in this report carries one of four labels. They are not interchangeable.
 
-| Label                   | Meaning                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| **Fact**                | Read directly from source, configuration, or git object at the cited location.  |
-| **Inference**           | Follows from cited facts by direct reasoning, with no independent confirmation. |
-| **Hypothesis**          | Plausible, consistent with the evidence, not established.                       |
-| **Unverified (未検証)** | Not established in this session. Not executed, not observed.                    |
+| Label          | Meaning                                                                         |
+| -------------- | ------------------------------------------------------------------------------- |
+| **Fact**       | Read directly from source, configuration, or git object at the cited location.  |
+| **Inference**  | Follows from cited facts by direct reasoning, with no independent confirmation. |
+| **Hypothesis** | Plausible, consistent with the evidence, not established.                       |
+| **Unverified** | Not established in this session. Not executed, not observed.                    |
 
 **Method limitation, stated up front:** no runtime reproduction was performed. `bin/rails` does not
 boot in the audit shell — `config/application.rb:27` raises
 `Missing required configuration: TRUSTED_PROXIES` — and running the suite requires the compose
 environment. The user elected static analysis only. **No test was executed and no HTTP request was
 issued during this audit.** Every dynamic behavior claim is therefore either static inference from
-`preference_global.rb` or marked 未検証.
+`preference_global.rb` or marked Unverified.
 
 A second method note: `git log -S … --all` in this repository triggers a `rails credentials diff`
 textconv driver that pollutes output and can abort the revision walk. All git evidence below was
@@ -221,8 +221,8 @@ contract can be centrally guaranteed.
 
 ## 4. 13-Target Verification Matrix
 
-Structural columns are **Fact** (read at `39b6cafbd`). Behavioral verification is **未検証** — see
-the method limitation above.
+Structural columns are **Fact** (read at `39b6cafbd`). Behavioral verification is **Unverified** —
+see the method limitation above.
 
 | #   | Family | Edition | Representative route     | ApplicationController                  | HTML UI            | `include ::PreferenceGlobal` | `before_action :set_region` | RI status                         |
 | --- | ------ | ------- | ------------------------ | -------------------------------------- | ------------------ | ---------------------------- | --------------------------- | --------------------------------- |
@@ -243,19 +243,19 @@ the method limitation above.
 ### Cases A–I
 
 Cases D, E, F and H are settled by reading `preference_global.rb` and are labelled **static
-inference**. Cases A, B, C, G and I require execution and are **未検証** for all 13 targets.
+inference**. Cases A, B, C, G and I require execution and are **Unverified** for all 13 targets.
 
 | Case | Description                                       | Status                                                                                                                                                                                                                                                                                  | Basis                                                                                                                  |
 | ---- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| A    | `/path` — is `ri` auto-attached?                  | **未検証** on all 13                                                                                                                                                                                                                                                                    | Requires a request. Statically, targets 1–3 and 13 have no code path that would attach it on the affected controllers. |
-| B    | `/path?ri=jp` — is the value preserved?           | **未検証**                                                                                                                                                                                                                                                                              | `set_region:209-212` returns without redirecting when the value is valid and the query is unchanged.                   |
-| C    | `/path?ri=us` — alternate valid value             | **未検証**                                                                                                                                                                                                                                                                              | `ALLOWED_REGIONS = %w(jp us)`, `request_context_contract.rb:9`.                                                        |
+| A    | `/path` — is `ri` auto-attached?                  | **Unverified** on all 13                                                                                                                                                                                                                                                                | Requires a request. Statically, targets 1–3 and 13 have no code path that would attach it on the affected controllers. |
+| B    | `/path?ri=jp` — is the value preserved?           | **Unverified**                                                                                                                                                                                                                                                                          | `set_region:209-212` returns without redirecting when the value is valid and the query is unchanged.                   |
+| C    | `/path?ri=us` — alternate valid value             | **Unverified**                                                                                                                                                                                                                                                                          | `ALLOWED_REGIONS = %w(jp us)`, `request_context_contract.rb:9`.                                                        |
 | D    | `/path?ri=INVALID`                                | **Static inference: dropped, then re-derived.** `request_context_value:107-110` returns `nil` when `valid_requested_context_value?` fails, so the invalid value never enters `requested_context`; `set_region:215-218` then redirects with `get_region`, i.e. the cookie value or `jp`. | `preference_global.rb:100-111, 119-121, 190-192, 215-218`                                                              |
 | E    | `/path?foo=bar` — existing query preserved?       | **Static inference: yes.** The redirect query is `request.query_parameters.merge("ri" => …)`, which preserves unrelated keys.                                                                                                                                                           | `preference_global.rb:217, 237-239`                                                                                    |
 | F    | `?ri=jp&ri=jp` — duplicate produced?              | **Static inference: no.** `merge` on a Hash cannot yield a duplicate key, and `to_query` emits one pair per key.                                                                                                                                                                        | `preference_global.rb:172, 217, 238`                                                                                   |
-| G    | Redirect chain A→B→A                              | **未検証.** Statically, `set_region:210` guards with `query_changed`, so a request whose sanitized query already equals the request query does not redirect again. Whether this holds under `RegionalRootRedirect` and `RootSignInRedirect` interaction is **not established**.         | `preference_global.rb:207, 210`                                                                                        |
+| G    | Redirect chain A→B→A                              | **Unverified.** Statically, `set_region:210` guards with `query_changed`, so a request whose sanitized query already equals the request query does not redirect again. Whether this holds under `RegionalRootRedirect` and `RootSignInRedirect` interaction is **not established**.     | `preference_global.rb:207, 210`                                                                                        |
 | H    | Preference precedence                             | **Static inference: params > cookie > default**, and an explicit valid `ri` is never rewritten.                                                                                                                                                                                         | `preference_global.rb:61-63`; `adr/localization-preference-flow.md:37-41`                                              |
-| I    | HTML entry point actually exercises the mechanism | **未検証 by execution.** Structurally established for the 12 wired targets and structurally _disproven_ for targets 1–3 at `/sign/in` and `/sign/up` (§5.1) and for target 13 (§5.2).                                                                                                   | §5                                                                                                                     |
+| I    | HTML entry point actually exercises the mechanism | **Unverified by execution.** Structurally established for the 12 wired targets and structurally _disproven_ for targets 1–3 at `/sign/in` and `/sign/up` (§5.1) and for target 13 (§5.2).                                                                                               | §5                                                                                                                     |
 
 **This matrix is incomplete by design of the agreed scope.** Anyone acting on it should run the A–I
 cases under compose before treating the "Wired" rows as verified working.
@@ -380,7 +380,7 @@ end
 redirected cross-host to base with the region **dropped**. Base then applies its own `set_region`
 and re-derives a region from _its own_ cookie context, so the user's region on the `auth` host is
 silently discarded and an extra redirect hop is added. Whether the re-derived region differs in
-practice is **未検証**.
+practice is **Unverified**.
 
 ### 5.4 Outside the 13 — `base/{net,dev}` and `core/{net,dev}` (Fact)
 
@@ -658,7 +658,7 @@ For §5.2 (`palm`) and §5.3 (`RedirectOnlyController`) there is **no last-known
 appears never to have had the mechanism, and `Auth::RedirectOnlyController` was created already
 inheriting the bare root controller (`3c6c2e95e`, 2026-06-03). These are **latent gaps, not
 regressions**. Distinguishing "never worked" from "regressed" for `palm` would need a full-history
-walk that was not performed — **未証明**.
+walk that was not performed — **Unproven**.
 
 ---
 
@@ -689,7 +689,7 @@ the OIDC handoff — two `before_action`-driven redirects competing for the same
 `set_region` was disabled and the region was threaded manually instead.
 
 **This is inference, not fact.** The commit message is literally `[CheckPoint] ..........` with no
-body, and there is no ADR, issue, or code comment stating the intent. **Marked 未証明.**
+body, and there is no ADR, issue, or code comment stating the intent. **Marked Unproven.**
 
 **Why the manual threading did not compensate (Fact + Inference).** The replacement threads
 `ri: params[:ri]` — the **raw, unvalidated** param — not `required_ri`
@@ -748,7 +748,7 @@ URLs still carry the cookie/default region"_ rather than _"no region anywhere."_
 
 **This is the single highest-leverage design fact in the report.** It is what converts one skipped
 callback into surface-wide region loss. Whether the current behavior is deliberate — a redirect-only
-canonicalization model — is **未証明**; no ADR discusses the choice.
+canonicalization model — is **Unproven**; no ADR discusses the choice.
 
 ### Detection cause
 
@@ -1078,7 +1078,7 @@ Further recommendations:
 
 ## 19. Risks and Open Questions
 
-**Unverified (未検証) — must be closed before relying on this report's behavioral claims:**
+**Unverified — must be closed before relying on this report's behavioral claims:**
 
 1. **No runtime verification was performed at all.** Cases A, B, C, G, I are unverified for all 13
    targets. The "Wired" rows in §4 are structural findings, not observed behavior.
@@ -1091,7 +1091,7 @@ Further recommendations:
 4. **§5.3's real-world effect is unverified.** The double-hop is established statically; whether the
    region actually changes across the hop depends on cookie state on both hosts.
 
-**Unproven (未証明):**
+**Unproven:**
 
 5. **The motive for `f0cbba2b51`.** Inferred from code adjacency only. No ADR, issue, or comment.
 6. **Whether `f0cbba2b51` was reviewed.** No PR metadata retrieved. GitHub CLI was not used.
@@ -1201,4 +1201,4 @@ find app/controllers/base -path '*sign*' -name '*.rb'          # sign_outs only
 **None.** No test was executed during this audit. `bin/rails` does not boot in the audit environment
 (`config/application.rb:27` — `Missing required configuration: TRUSTED_PROXIES`), and the user
 scoped the audit to static analysis. Every behavioral claim in this report is either static
-inference from cited source or explicitly marked 未検証.
+inference from cited source or explicitly marked Unverified.
