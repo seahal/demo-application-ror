@@ -9,7 +9,6 @@ vi.mock("@inertiajs/react", () => ({
 
 import SurfaceDashboard, { type SurfaceDashboardProps } from "@/features/auth/SurfaceDashboard";
 import RootLanding from "@/features/landing/RootLanding";
-import AuthAppDashboardShow from "@/pages/auth/app/dashboards/show";
 import AuthAppRootsIndex from "@/pages/auth/app/roots/index";
 
 const props: SurfaceDashboardProps = {
@@ -103,10 +102,6 @@ describe("SurfaceDashboard", () => {
 });
 
 describe("auth/app pages", () => {
-  it("dashboards/show re-exports the shared dashboard", () => {
-    expect(AuthAppDashboardShow).toBe(SurfaceDashboard);
-  });
-
   it("roots/index re-exports the shared landing", () => {
     expect(AuthAppRootsIndex).toBe(RootLanding);
   });

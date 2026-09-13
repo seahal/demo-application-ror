@@ -133,10 +133,10 @@ module OidcClientStoresStaticClientStore
           build_redirect_uris("SIDE_CORPORATE_URL", "wide.com.localhost"),
       },
       post_logout_redirect_uris: build_post_logout_redirect_uris(
-        "BASE_SERVICE_URL", "www.app.localhost", path: "/lobby",
+        "BASE_SERVICE_URL", "www.app.localhost", path: "/sign/out",
       ) +
-        build_post_logout_redirect_uris("BASE_STAFF_URL", "www.org.localhost", path: "/lobby") +
-        build_post_logout_redirect_uris("BASE_CORPORATE_URL", "www.com.localhost", path: "/lobby") +
+        build_post_logout_redirect_uris("BASE_STAFF_URL", "www.org.localhost", path: "/sign/out") +
+        build_post_logout_redirect_uris("BASE_CORPORATE_URL", "www.com.localhost", path: "/sign/out") +
         build_post_logout_redirect_uris("SIDE_SERVICE_URL", "wide.app.localhost") +
         build_post_logout_redirect_uris("SIDE_STAFF_URL", "wide.org.localhost") +
         build_post_logout_redirect_uris("SIDE_CORPORATE_URL", "wide.com.localhost"),

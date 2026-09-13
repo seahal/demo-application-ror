@@ -1,7 +1,5 @@
 # Implementation pause notes
 
-- P1–P4 complete on `feature` (through AuthCeremonySession + opaque admission).
-- P5 in progress: seven first-party RP client registrations added; Valkey auth-code exchange cutover
-  and Auth/Base legacy RP route retirement still remain.
-- Remaining afterward: P6–P9 (roots/dashboards, one-shot sign-out, Edit publishing routes,
-  docs/evidence/full CI).
+- P1–P6 landing on `feature` (through Auth/Base root contract; dashboards/lobbies removed).
+- P5 still has follow-ups: Valkey auth-code exchange cutover and retiring shared clients.
+- Remaining: P7 one-shot /sign/out, P8 Edit publishing routes, P9 docs/evidence/full CI.
