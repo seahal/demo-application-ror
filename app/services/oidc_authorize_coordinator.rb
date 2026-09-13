@@ -26,7 +26,8 @@ class OidcAuthorizeCoordinator < ApplicationService
     failure("invalid_scope", e.message)
   rescue OidcClientRegistry::InvalidRedirectUri, ArgumentError => e
     failure("invalid_request", e.message)
-  rescue ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordInvalid, Umaxica::Valkey::Unavailable, Umaxica::Valkey::SerializationError,
+         Umaxica::Valkey::OperationError => e
     failure("server_error", e.message)
   end
 

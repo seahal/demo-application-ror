@@ -47,7 +47,7 @@ class AnomalyReportingAndAuthorizeFailuresTest < ActiveSupport::TestCase
     coordinator =
       OidcAuthorizeCoordinator.new(params: {}, resource: nil, session_token: nil)
     coordinator.define_singleton_method(:validate_request!) do
-      raise ActiveRecord::RecordInvalid, ClientAuthorizationCode.new
+      raise Umaxica::Valkey::Unavailable, "authorization code store unavailable"
     end
 
     result = coordinator.call

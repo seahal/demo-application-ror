@@ -34,8 +34,6 @@ class CreateClientRpSessionsAndBindAuthorizationCodes < ActiveRecord::Migration[
     add_index :client_rp_sessions, :oidc_client_id
     add_index :client_rp_sessions, :revoked_at
 
-    add_column :client_authorization_codes, :client_token_id, :bigint
-    add_index :client_authorization_codes, :client_token_id, algorithm: :concurrently, if_not_exists: true
-    add_foreign_key :client_authorization_codes, :client_tokens, on_delete: :cascade, validate: false
+
   end
 end

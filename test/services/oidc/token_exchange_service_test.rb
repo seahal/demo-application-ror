@@ -240,9 +240,9 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
       )
     end
 
-    code_record.reload
+    payload = authorization_code_store.read(code_record.code)
 
-    assert_predicate code_record, :consumed?
+    assert_equal "consumed", payload.fetch("state")
   end
 
   test "fails for wrong grant_type" do
@@ -477,8 +477,12 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
   test "explicit public client rejects plain pkce code" do
     public_client = public_visitor_account
-    code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
-    code_record.update_columns(code_challenge: @code_verifier, code_challenge_method: "plain")
+    code_record = plant_authorization_code!(
+      client_id: public_client.client_id,
+      redirect_uri: public_client.redirect_uris.first,
+      code_challenge: @code_verifier,
+      code_challenge_method: "plain",
+    )
 
     with_public_client(public_client) do
       result = OidcTokenExchangeCoordinator.call(
@@ -571,7 +575,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal "invalid_request", result.error
     assert_equal "client_id mismatch", result.error_description
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "token exchange rejects codes with disallowed scopes" do
@@ -594,14 +598,14 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal "invalid_grant", result.error
     assert_equal "Authorization code scope is invalid", result.error_description
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "explicit public client fails with expired code" do
     public_client = public_visitor_account
     code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
 
-    travel ClientAuthorizationCode::CODE_TTL + 1.second do
+    travel Valkey::AuthState::AuthorizationCodeStore::CODE_TTL + 1.second do
       with_public_client(public_client) do
         result = OidcTokenExchangeCoordinator.call(
           grant_type: "authorization_code",
@@ -621,7 +625,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   test "explicit public client fails with reused code" do
     public_client = public_visitor_account
     code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
-    code_record.consume!
+    consume_issued_code!(code_record)
 
     with_public_client(public_client) do
       result = OidcTokenExchangeCoordinator.call(
@@ -715,7 +719,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   test "fails for expired code" do
     code_record = issue_code!
 
-    travel ClientAuthorizationCode::CODE_TTL + 1.second do
+    travel Valkey::AuthState::AuthorizationCodeStore::CODE_TTL + 1.second do
       result =
         with_authenticated_client do
           OidcTokenExchangeCoordinator.call(
@@ -737,7 +741,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
   test "fails for already consumed code" do
     code_record = issue_code!
-    code_record.consume!
+    consume_issued_code!(code_record)
 
     result =
       with_authenticated_client do
@@ -937,15 +941,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     org_redirect_uri = org_client.redirect_uris_by_realm.fetch("operator").first
     staff_secret_credential = "test_secret_credential_for_core_org"
 
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     result =
@@ -975,15 +975,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     org_redirect_uri = org_client.redirect_uris_by_realm.fetch("operator").first
     staff_secret_credential = "test_secret_credential_for_core_org"
 
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     assert_no_difference "OperatorToken.count" do
@@ -1009,15 +1005,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     staff_session_token = OperatorToken.create!(staff: staff)
     org_client = OidcClientRegistry.find("core-next-rp")
     staff_secret_credential = "test_secret_credential_for_core_org"
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_client.redirect_uris_by_realm.fetch("operator").first,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     with_authenticated_org_client(staff_secret_credential) do
@@ -1049,15 +1041,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     com_redirect_uri = com_client.redirect_uris_by_realm.fetch("visitor").first
     visitor_secret_credential = "test_secret_credential_for_core_com"
 
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     result =
@@ -1087,15 +1075,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     com_redirect_uri = com_client.redirect_uris_by_realm.fetch("visitor").first
     visitor_secret_credential = "test_secret_credential_for_core_com"
 
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     assert_no_difference "VisitorToken.count" do
@@ -1121,15 +1105,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     visitor_session_token = VisitorToken.create!(visitor: visitor, visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB)
     com_client = OidcClientRegistry.find("core-next-rp")
     visitor_secret_credential = "test_secret_credential_for_core_com"
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_client.redirect_uris_by_realm.fetch("visitor").first,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     with_authenticated_com_client(visitor_secret_credential) do
@@ -1344,8 +1324,13 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   end
 
   test "token exchange rejects a code_challenge_method of plain even with a matching verifier" do
-    code_record = issue_code!(scope: "openid profile")
-    code_record.update_columns(code_challenge_method: "plain")
+    code_record = plant_authorization_code!(
+      client_id: "core-next-rp",
+      redirect_uri: @redirect_uri,
+      code_challenge: @code_challenge,
+      code_challenge_method: "plain",
+      scope: "openid profile",
+    )
 
     result =
       with_authenticated_client do
@@ -1363,7 +1348,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "public palm audience exchange issues access token accepted by palm resource server" do
@@ -1438,17 +1423,83 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
-  def issue_code!(client_id: "core-next-rp", redirect_uri: @redirect_uri, scope: "openid profile email")
-    ClientAuthorizationCode.issue!(
-      user: @user,
-      client_token: @user_session_token,
-      client_id: client_id,
+  def issue_code!(client_id: "core-next-rp", redirect_uri: @redirect_uri, scope: "openid profile email",
+                  resource: nil, session_token: nil)
+    resource ||= @user
+    session_token ||= @user_session_token
+    OidcAuthorizationCodeIssuer.call(
+      client: OidcClientRegistry.find(client_id) || visitor_account(
+        client_id: client_id,
+        redirect_uris: [redirect_uri],
+      ),
+      params: {
+        client_id: client_id,
+        redirect_uri: redirect_uri,
+        code_challenge: @code_challenge,
+        code_challenge_method: "S256",
+        nonce: "test_nonce",
+        scope: scope,
+      },
+      resource: resource,
+      session_token: session_token,
+    )
+  end
+
+  def authorization_code_store
+    Valkey::AuthState::AuthorizationCodeStore.new
+  end
+
+  def consume_issued_code!(code_record)
+    authorization_code_store.consume!(
+      raw_code: code_record.code,
+      expected: {
+        client_id: code_record.client_id,
+        redirect_uri: code_record.redirect_uri,
+      },
+    )
+  end
+
+  def assert_code_unconsumed(code_record)
+    payload = authorization_code_store.read(code_record.code)
+
+    assert_not_nil payload
+    assert_equal "issued", payload.fetch("state")
+  end
+
+  def plant_authorization_code!(client_id:, redirect_uri:, code_challenge:, code_challenge_method:,
+                                scope: "openid profile email", resource: nil, session_token: nil)
+    resource ||= @user
+    session_token ||= @user_session_token
+    store = authorization_code_store
+    # Bypass issue! S256 guard to plant defense-in-depth exchange cases.
+    raw_code = SecureRandom.urlsafe_base64(32, padding: false)
+    payload = {
+      "version" => 1,
+      "state" => "issued",
+      "client_id" => client_id.to_s,
+      "redirect_uri" => redirect_uri.to_s,
+      "subject" => OidcSubject.for(resource, resource_type: "client"),
+      "base_session_ref" => session_token.public_id,
+      "code_challenge" => code_challenge.to_s,
+      "code_challenge_method" => code_challenge_method.to_s,
+      "nonce" => "test_nonce",
+      "scope" => scope,
+      "auth_time" => Time.current.iso8601,
+      "resource_type" => "client",
+      "issued_at" => Time.current.iso8601,
+      "expires_at" => (Time.current + Valkey::AuthState::AuthorizationCodeStore::CODE_TTL).iso8601,
+    }
+    key = store.storage_key(raw_code)
+    store.instance_variable_get(:@connection).call("SET", key, JSON.generate(payload), "EX", 60)
+    OidcIssuedAuthorizationCode.new(
+      code: raw_code,
       redirect_uri: redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
+      state: nil,
+      resource_type: "client",
+      client_id: client_id,
       nonce: "test_nonce",
       scope: scope,
     )

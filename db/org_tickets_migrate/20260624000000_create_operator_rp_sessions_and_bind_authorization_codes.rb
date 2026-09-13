@@ -34,8 +34,6 @@ class CreateOperatorRpSessionsAndBindAuthorizationCodes < ActiveRecord::Migratio
     add_index :operator_rp_sessions, :oidc_client_id
     add_index :operator_rp_sessions, :revoked_at
 
-    add_column :operator_authorization_codes, :operator_token_id, :bigint
-    add_index :operator_authorization_codes, :operator_token_id, algorithm: :concurrently, if_not_exists: true
-    add_foreign_key :operator_authorization_codes, :operator_tokens, on_delete: :cascade, validate: false
+
   end
 end

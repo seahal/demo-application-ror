@@ -75,12 +75,12 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
         assert_equal "/oidc/callback", callback_uri.path
         assert_predicate callback_query["code"], :present?
         assert_equal authorize_query.fetch("state"), callback_query.fetch("state")
-        code_record = ClientAuthorizationCode.find_by!(code: callback_query.fetch("code"))
+        payload = Valkey::AuthState::AuthorizationCodeStore.new.read(callback_query.fetch("code"))
 
-        assert_equal @user.id, code_record.user_id
-        assert_equal @current_session_id, code_record.client_token_id
-        assert_predicate code_record.client_token, :present?
-        assert_predicate code_record.resource, :present?
+        assert_not_nil payload
+        assert_equal OidcSubject.for(@user, resource_type: "client"), payload.fetch("subject")
+        assert_equal ClientToken.find(@current_session_id).public_id, payload.fetch("base_session_ref")
+        assert_equal "issued", payload.fetch("state")
 
         id_token = OidcIdTokenIssuer.call(
           resource: @user,
@@ -135,10 +135,6 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
     return unless defined?(@user) && @user.present?
 
     AppTicketRecord.connected_to(role: :writing) do
-      ClientAuthorizationCode.where(
-        client_id: "sign-rp",
-        client_token_id: @current_session_id,
-      ).delete_all if defined?(@current_session_id)
       ClientRpSession.where(client_token_id: @current_session_id).delete_all if defined?(@current_session_id)
       ClientOidcConnection.where(user_id: @user.id, client_id: "sign-rp").delete_all
       ClientToken.where(id: @current_session_id).find_each(&:destroy!) if defined?(@current_session_id)

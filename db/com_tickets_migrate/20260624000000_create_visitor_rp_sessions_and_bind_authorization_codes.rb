@@ -34,8 +34,6 @@ class CreateVisitorRpSessionsAndBindAuthorizationCodes < ActiveRecord::Migration
     add_index :visitor_rp_sessions, :oidc_client_id
     add_index :visitor_rp_sessions, :revoked_at
 
-    add_column :visitor_authorization_codes, :visitor_token_id, :bigint
-    add_index :visitor_authorization_codes, :visitor_token_id, algorithm: :concurrently, if_not_exists: true
-    add_foreign_key :visitor_authorization_codes, :visitor_tokens, on_delete: :cascade, validate: false
+
   end
 end
