@@ -1,11 +1,11 @@
 # typed: false
 # frozen_string_literal: true
 
-class CreateVisitorTokenUsagesAndBindAuthorizationCodes < ActiveRecord::Migration[8.2]
+class CreateVisitorRpSessionsAndBindAuthorizationCodes < ActiveRecord::Migration[8.2]
   disable_ddl_transaction!
 
   def change
-    create_table :visitor_token_usages do |t|
+    create_table :visitor_rp_sessions do |t|
       t.references :visitor_token, null: false, foreign_key: { on_delete: :cascade }
       t.string :public_id, null: false, limit: 21
       t.string :oidc_client_id, null: false, limit: 64
@@ -24,15 +24,15 @@ class CreateVisitorTokenUsagesAndBindAuthorizationCodes < ActiveRecord::Migratio
       t.timestamps
     end
 
-    add_index :visitor_token_usages, :public_id, unique: true
-    add_index :visitor_token_usages,
+    add_index :visitor_rp_sessions, :public_id, unique: true
+    add_index :visitor_rp_sessions,
               %i[visitor_token_id oidc_client_id],
               unique: true,
               where: "revoked_at IS NULL",
-              name: "idx_active_visitor_token_usage_per_rp"
-    add_index :visitor_token_usages, :refresh_token_digest, unique: true, where: "refresh_token_digest IS NOT NULL"
-    add_index :visitor_token_usages, :oidc_client_id
-    add_index :visitor_token_usages, :revoked_at
+              name: "idx_active_visitor_rp_session_per_rp"
+    add_index :visitor_rp_sessions, :refresh_token_digest, unique: true, where: "refresh_token_digest IS NOT NULL"
+    add_index :visitor_rp_sessions, :oidc_client_id
+    add_index :visitor_rp_sessions, :revoked_at
 
     add_column :visitor_authorization_codes, :visitor_token_id, :bigint
     add_index :visitor_authorization_codes, :visitor_token_id, algorithm: :concurrently, if_not_exists: true

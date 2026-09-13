@@ -63,7 +63,7 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
       assert_predicate pending_flow.fetch("code_verifier"), :present?
 
       root_token_count = ClientToken.where(user_id: @user.id).count
-      usage_count = ClientTokenUsage.count
+      usage_count = ClientRpSession.count
 
       AppTicketRecord.connected_to(role: :writing) do
         acme_session.get("/oauth/authorize", params: authorize_query, headers: acme_headers)
@@ -111,7 +111,7 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
       assert_includes response.headers["Set-Cookie"].to_s, "#{AuthenticationBase::ACCESS_COOKIE_KEY}="
       assert_includes response.headers["Set-Cookie"].to_s, "#{AuthenticationBase::REFRESH_COOKIE_KEY}="
       assert_equal root_token_count, ClientToken.where(user_id: @user.id).count
-      assert_equal usage_count + 1, ClientTokenUsage.count
+      assert_equal usage_count + 1, ClientRpSession.count
 
       get auth_app_settings_url(ri: "jp"), headers: browser_headers.merge("Host" => sign_host)
 
@@ -139,7 +139,7 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
         client_id: "sign-rp",
         client_token_id: @current_session_id,
       ).delete_all if defined?(@current_session_id)
-      ClientTokenUsage.where(client_token_id: @current_session_id).delete_all if defined?(@current_session_id)
+      ClientRpSession.where(client_token_id: @current_session_id).delete_all if defined?(@current_session_id)
       ClientOidcConnection.where(user_id: @user.id, client_id: "sign-rp").delete_all
       ClientToken.where(id: @current_session_id).find_each(&:destroy!) if defined?(@current_session_id)
     end

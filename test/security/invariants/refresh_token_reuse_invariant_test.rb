@@ -63,7 +63,7 @@ module Security
           discarded_at: 1.day.from_now,
           purged_at: 2.days.from_now,
         )
-        usage = ClientTokenUsage.create!(client_token: root_token, oidc_client_id: "base-rails-rp")
+        usage = ClientRpSession.create!(client_token: root_token, oidc_client_id: "base-rails-rp")
         reused_refresh = usage.issue_refresh_token!
 
         rotation = OidcRefreshTokenIssuer.call(refresh_token: reused_refresh)
@@ -87,7 +87,7 @@ module Security
           discarded_at: 1.day.from_now,
           purged_at: 2.days.from_now,
         )
-        usage = ClientTokenUsage.create!(client_token: root_token, oidc_client_id: "base-rails-rp")
+        usage = ClientRpSession.create!(client_token: root_token, oidc_client_id: "base-rails-rp")
         first_refresh = usage.issue_refresh_token!
 
         first_rotation = OidcRefreshTokenIssuer.call(refresh_token: first_refresh)

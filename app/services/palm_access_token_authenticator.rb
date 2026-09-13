@@ -79,7 +79,7 @@ class PalmAccessTokenAuthenticator < ApplicationService
     return if sid.blank?
 
     AppTicketRecord.connected_to(role: :reading) do
-      ClientTokenUsage.find_by(public_id: sid) ||
+      ClientRpSession.find_by(public_id: sid) ||
         ClientToken.find_by(oidc_sid: sid) ||
         ClientToken.find_by(public_id: sid)
     end

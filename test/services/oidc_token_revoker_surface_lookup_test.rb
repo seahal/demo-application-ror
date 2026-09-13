@@ -24,7 +24,7 @@ class OidcTokenRevokerSurfaceLookupTest < ActiveSupport::TestCase
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       discarded_at: 1.day.from_now,
     )
-    usage = OperatorTokenUsage.create!(operator_token: token, oidc_client_id: "docs_org")
+    usage = OperatorRpSession.create!(operator_token: token, oidc_client_id: "docs_org")
     refresh_token = usage.issue_refresh_token!
 
     result =
@@ -46,7 +46,7 @@ class OidcTokenRevokerSurfaceLookupTest < ActiveSupport::TestCase
       visitor_token_status_id: VisitorTokenStatus::ACTIVE,
       discarded_at: 1.day.from_now,
     )
-    usage = VisitorTokenUsage.create!(visitor_token: token, oidc_client_id: "docs_com")
+    usage = VisitorRpSession.create!(visitor_token: token, oidc_client_id: "docs_com")
     refresh_token = usage.issue_refresh_token!
 
     result =
@@ -68,7 +68,7 @@ class OidcTokenRevokerSurfaceLookupTest < ActiveSupport::TestCase
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       discarded_at: 1.day.from_now,
     )
-    usage = OperatorTokenUsage.create!(operator_token: token, oidc_client_id: "docs_org")
+    usage = OperatorRpSession.create!(operator_token: token, oidc_client_id: "docs_org")
     refresh_token = usage.issue_refresh_token!
 
     OidcClientRegistry.stub(:authenticate, true) do

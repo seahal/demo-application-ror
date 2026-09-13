@@ -82,14 +82,14 @@ class CoverageThresholdOidcEdgesTest < ActiveSupport::TestCase
     assert_equal :operator_token, svc.send(
       :parent_token_foreign_key_for, Class.new {
                                        def self.name
-                                         "OperatorTokenUsage"
+                                         "OperatorRpSession"
                                        end
                                      },
     )
     assert_equal :visitor_token, svc.send(
       :parent_token_foreign_key_for, Class.new {
                                        def self.name
-                                         "VisitorTokenUsage"
+                                         "VisitorRpSession"
                                        end
                                      },
     )
@@ -104,6 +104,6 @@ class CoverageThresholdOidcEdgesTest < ActiveSupport::TestCase
 
     assert_equal :issued, svc.send(:issue_or_rotate_usage_refresh_token!, usage)
     usage.define_singleton_method(:oidc_jti) { nil }
-    assert_raises(ArgumentError) { svc.send(:token_usage_oidc_jti, usage) }
+    assert_raises(ArgumentError) { svc.send(:rp_session_oidc_jti, usage) }
   end
 end

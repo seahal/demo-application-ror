@@ -44,7 +44,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   end
 
   test "exchanged OIDC access id and refresh tokens end by the root session expiry" do
-    travel_to Time.utc(2026, 9, 13, 9, 0) do
+    travel_to(@user_session_token.created_at + 1.second) do
       absolute_expiry = 2.minutes.from_now
       @user_session_token.update!(discarded_at: absolute_expiry)
       code_record = issue_code!
@@ -73,7 +73,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
         jwt_issuer_id: OidcIssuer.jwt_issuer_id_for_client(@client),
       )
       id_token = JWT.decode(result.token_response.fetch(:id_token), nil, false).first
-      usage = ClientTokenUsage.find_by!(client_token: @user_session_token, oidc_client_id: @client.client_id)
+      usage = ClientRpSession.find_by!(client_token: @user_session_token, oidc_client_id: @client.client_id)
 
       assert_operator Time.zone.at(access_token.fetch("exp")), :<=, absolute_expiry
       assert_operator Time.zone.at(id_token.fetch("exp")), :<=, absolute_expiry
@@ -823,7 +823,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     code_record = issue_code!
 
     assert_no_difference "ClientToken.count" do
-      assert_difference "ClientTokenUsage.count", 1 do
+      assert_difference "ClientRpSession.count", 1 do
         with_authenticated_client do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -857,7 +857,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = ClientOidcConnection.find_by!(user_id: @user.id, client_id: "core-next-rp")
-    usage = ClientTokenUsage.order(:created_at).last
+    usage = ClientRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_nil connection.revoked_at
@@ -987,7 +987,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     )
 
     assert_no_difference "OperatorToken.count" do
-      assert_difference "OperatorTokenUsage.count", 1 do
+      assert_difference "OperatorRpSession.count", 1 do
         with_authenticated_org_client(staff_secret_credential) do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -1034,7 +1034,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = OperatorOidcConnection.find_by!(staff_id: staff.id, client_id: "core-next-rp")
-    usage = OperatorTokenUsage.order(:created_at).last
+    usage = OperatorRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_equal staff_session_token.id, usage.operator_token_id
@@ -1099,7 +1099,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     )
 
     assert_no_difference "VisitorToken.count" do
-      assert_difference "VisitorTokenUsage.count", 1 do
+      assert_difference "VisitorRpSession.count", 1 do
         with_authenticated_com_client(visitor_secret_credential) do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -1146,7 +1146,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = VisitorOidcConnection.find_by!(visitor_id: visitor.id, client_id: "core-next-rp")
-    usage = VisitorTokenUsage.order(:created_at).last
+    usage = VisitorRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_equal visitor_session_token.id, usage.visitor_token_id
@@ -1184,7 +1184,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     ClientToken.last
 
-    assert_predicate ClientTokenUsage.last.dpop_jkt, :present?
+    assert_predicate ClientRpSession.last.dpop_jkt, :present?
   end
 
   test "issues Bearer token when no DPoP proof is provided" do
@@ -1206,7 +1206,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_predicate result, :success?
     assert_equal "Bearer", result.token_response[:token_type]
-    assert_nil ClientTokenUsage.last.dpop_jkt
+    assert_nil ClientRpSession.last.dpop_jkt
   end
 
   test "fails when DPoP proof has wrong htm" do

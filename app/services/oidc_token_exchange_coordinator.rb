@@ -244,7 +244,7 @@ class OidcTokenExchangeCoordinator < ApplicationService
     usage.refresh_token_digest.present? ? usage.rotate_refresh_token! : usage.issue_refresh_token!
   end
 
-  def token_usage_oidc_jti(usage)
+  def rp_session_oidc_jti(usage)
     usage.oidc_jti.presence || raise(ArgumentError, "OIDC token usage is missing oidc_jti")
   end
 
@@ -284,7 +284,7 @@ class OidcTokenExchangeCoordinator < ApplicationService
       host: OidcIssuer.host_for_resource_type(resource_type),
       session_public_id: root_token.public_id,
       oidc_sid: usage.public_id,
-      oidc_jti: token_usage_oidc_jti(usage),
+      oidc_jti: rp_session_oidc_jti(usage),
       resource_type: resource_type,
       expires_at: access_expires_at,
       scopes: authorization_code.scope.to_s.split,
@@ -323,9 +323,9 @@ class OidcTokenExchangeCoordinator < ApplicationService
 
   def usage_class_for_root_token(root_token)
     case root_token
-    when ClientToken then ClientTokenUsage
-    when OperatorToken then OperatorTokenUsage
-    when VisitorToken then VisitorTokenUsage
+    when ClientToken then ClientRpSession
+    when OperatorToken then OperatorRpSession
+    when VisitorToken then VisitorRpSession
     else
       raise ArgumentError, "unsupported root token class: #{root_token.class.name}"
     end
@@ -339,8 +339,8 @@ class OidcTokenExchangeCoordinator < ApplicationService
 
   def parent_token_foreign_key_for(usage_class)
     case usage_class.name
-    when "OperatorTokenUsage" then :operator_token
-    when "VisitorTokenUsage" then :visitor_token
+    when "OperatorRpSession" then :operator_token
+    when "VisitorRpSession" then :visitor_token
     else :client_token
     end
   end

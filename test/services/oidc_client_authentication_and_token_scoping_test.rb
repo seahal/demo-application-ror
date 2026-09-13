@@ -51,9 +51,9 @@ class OidcClientAuthenticationAndTokenScopingTest < ActiveSupport::TestCase
       )
 
     {
-      ClientToken.new => ClientTokenUsage,
-      OperatorToken.new => OperatorTokenUsage,
-      VisitorToken.new => VisitorTokenUsage,
+      ClientToken.new => ClientRpSession,
+      OperatorToken.new => OperatorRpSession,
+      VisitorToken.new => VisitorRpSession,
     }.each do |root_token, usage_class|
       assert_equal usage_class, coordinator.send(:usage_class_for_root_token, root_token)
     end
@@ -81,8 +81,8 @@ class OidcClientAuthenticationAndTokenScopingTest < ActiveSupport::TestCase
         client_id: "rp-1", code_verifier: "verifier",
       )
 
-    assert_equal :operator_token, coordinator.send(:parent_token_foreign_key_for, OperatorTokenUsage)
-    assert_equal :visitor_token, coordinator.send(:parent_token_foreign_key_for, VisitorTokenUsage)
-    assert_equal :client_token, coordinator.send(:parent_token_foreign_key_for, ClientTokenUsage)
+    assert_equal :operator_token, coordinator.send(:parent_token_foreign_key_for, OperatorRpSession)
+    assert_equal :visitor_token, coordinator.send(:parent_token_foreign_key_for, VisitorRpSession)
+    assert_equal :client_token, coordinator.send(:parent_token_foreign_key_for, ClientRpSession)
   end
 end
