@@ -1,7 +1,7 @@
 # Auth-boundary consolidation evidence (2026-09-13 JST)
 
 Branch: `feature`  
-Head at evidence write: `898fc6ea4` (see also Valkey cutover `9e4b71856`).
+Head at evidence write: `30e833fd4` (continuation after leftover RP-route and SIDE JWT slices).
 
 ## Environment
 
@@ -17,6 +17,9 @@ Head at evidence write: `898fc6ea4` (see also Valkey cutover `9e4b71856`).
 | P1–P9 skeleton         | through `ddab9d314` | Prior session foundations                                                                              |
 | P5 Valkey code cutover | `9e4b71856`         | Issue+exchange on Valkey CAS; PG `*AuthorizationCode` dropped; JTI stays in PG                         |
 | P5 seven-RP wiring     | `898fc6ea4`         | Core/Side/Edit client IDs; `/sign/in`+`/sign/in/callback`; Edit Org RP; Auth/Base RP `/oidc/*` retired |
+| P6/P7 stale URLs       | `d4c81a1e8`         | Dashboard and sign-out completion helper sweep                                                         |
+| P5 leftover RP starts  | `0b7cfbba1`         | Core/Side/Edit `/oidc/authorization`+`/oidc/callback` retired; `/sign/in` is canonical                 |
+| P5 SIDE JWT namespaces | `30e833fd4`         | Independent `OIDC_CLIENT_SIDE_*` keys; Core bridges use `core-app`/`core-com`/`core-org`               |
 
 ## Verification executed this session
 
@@ -51,18 +54,31 @@ Route recognition spot-check: Core/Side/Edit `/sign/in` and `/sign/in/callback` 
 
 Pre-push `frontend-check` passed on both pushes.
 
+## Continuation 2026-09-13 evening (JST)
+
+Focused leftover-route suite: `36 runs, 798 assertions, 0 failures`.  
+SIDE/Core first-party focused suite: `78 runs, 654 assertions, 0 failures`.  
+Pre-push `bun run test:coverage`: 86 files, 1075 tests; stmts 99.82%, branches 99.71%, lines 99.81%.
+Gates held.
+
+Full `bundle exec rails test` (host Postgres + Valkey, `RUBY_DEBUG_OPEN=false`):  
+`12989 runs, 78152 assertions, 115 failures, 67 errors, 2 skips` in 636s. Not green.
+
 ## Remaining gaps vs plan completion conditions
 
 1. **Shared browser clients still registered** (`sign-rp`, `base-rails-rp`, `side-rails-rp`,
-   `core-next-rp`) until seven end-to-end browser flows are proven. Legacy `/oidc/callback` still
-   mounted beside `/sign/in/callback` on Core/Side for compatibility.
-2. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
+   `core-next-rp`). Auth still hardcodes `sign-rp`; Base still hardcodes `base-rails-rp`. Do not
+   remove the four IDs until those surfaces stop depending on them. Native/content clients stay.
+2. **Full Rails suite is red:** 115 failures / 67 errors. Largest clusters: Edit Publishing
+   `publishing_management_namespace` (`docsentries_controller` autoload), compose `valkey-cache`
+   missing, leftover Base RP browser-flow tests, Root/dashboard/lobby stale assertions, sign-out
+   lobby templates.
+3. **P4 call-site migration:** AuthCeremonySession + OpaqueAdmissionStore exist; most Auth/Base
    ceremony controllers not yet migrated onto opaque handoff/result + Base admission.
-3. **Full Rails suite + SimpleCov + browser E2E:** not re-run end-to-end this session. Some route
-   contract tests still assert retired `/dashboard` and `/sign/out/complete` (stale vs P6/P7).
-4. **Side RP JWT namespaces** still use `BASE_*` key material (not independent `SIDE_*` namespaces).
-5. **Compose bring-up** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
-   re-validated as a full stack in this session (host Postgres + Valkey used).
+4. **Compose full stack** (`podman-compose --in-pod=false` primary/replica/valkey/fakecloud) not
+   re-validated; host Postgres + Valkey used. Compose contract tests still expect `valkey-cache`.
+5. **SIDE surface JWT** (`JWT_SIDE_*` / `SURFACE_NAMESPACES`) was not added. Only OIDC client
+   assertion namespaces (`OIDC_CLIENT_SIDE_*`) were wired, matching the existing CORE/EDIT pattern.
 
 ## Conclusion
 
