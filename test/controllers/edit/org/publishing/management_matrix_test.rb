@@ -28,6 +28,9 @@ class Edit::Org::Publishing::ManagementMatrixTest < ActiveSupport::TestCase
       assert_equal Publishing::ContentFamilies.entry_class(surface:, audience:), controller::ENTRY_CLASS,
                    controller.name
       assert_operator controller, :<, Edit::Org::ApplicationController
+      assert_equal "edit/org/publishing",
+                   controller.new.send(:publishing_management_namespace),
+                   controller.name
       assert_equal :private, controller::AUTHENTICATION_MODE
       assert_equal :private, controller.authentication_mode_for(:update)
     end
@@ -48,6 +51,9 @@ class Edit::Org::Publishing::ManagementMatrixTest < ActiveSupport::TestCase
         assert_equal surface, nested_controller.publishing_surface, nested_controller.name
         assert_equal controller::ENTRY_CLASS, nested_controller::ENTRY_CLASS, nested_controller.name
         assert_operator nested_controller, :<, Edit::Org::ApplicationController
+        assert_equal "edit/org/publishing",
+                     nested_controller.new.send(:publishing_management_namespace),
+                     nested_controller.name
         assert_equal :private, nested_controller::AUTHENTICATION_MODE, nested_controller.name
       end
 

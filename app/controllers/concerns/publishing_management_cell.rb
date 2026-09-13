@@ -73,11 +73,10 @@ module PublishingManagementCell
     self.class.publishing_entry_class
   end
 
-  # Staff CMS Inertia/controller prefix. Declared by the surface application
-  # controller so cells never infer it from class names, params, or host.
-  def publishing_management_namespace
-    raise(NotImplementedError, "#{self.class.name} must implement #publishing_management_namespace")
-  end
+  # Staff CMS Inertia/controller prefix comes from the surface
+  # ApplicationController (Edit::Org::ApplicationController#publishing_management_namespace).
+  # Do not define a stub here: included modules sit ahead of the superclass in
+  # the ancestor chain and would shadow that implementation for every cell.
 
   # Every CMS action asks the same question of the same policy. The record
   # differs -- an entry for the member actions, the operator for the

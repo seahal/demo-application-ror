@@ -109,20 +109,22 @@ class ComposeLocalOverrideOptionalTest < Minitest::Test
     end
   end
 
-  def test_devcontainer_override_names_both_valkey_services_from_the_base_compose
+  def test_devcontainer_override_names_the_single_nonprod_valkey_from_the_base_compose
+    # Nonprod shares one Valkey (logical DBs 0/1/2); see
+    # adr/valkey-nonprod-logical-db-topology.md. Dual valkey-cache / valkey-rate-limit
+    # services are retired for development/test.
     base_services = load_compose("compose.yaml").fetch("services")
     override_services = load_compose(".devcontainer/compose.override.yml").fetch("services")
 
-    refute_includes override_services, "valkey",
-                    "the retired single Valkey service makes devcontainer up look for " \
-                    "global-devcontainer-valkey"
+    refute_includes base_services, "valkey-cache"
+    refute_includes base_services, "valkey-rate-limit"
+    refute_includes override_services, "valkey-cache"
+    refute_includes override_services, "valkey-rate-limit"
 
-    %w(valkey-cache valkey-rate-limit).each do |service|
-      assert_includes base_services, service
-      assert_includes override_services, service
-      assert_equal base_services.fetch(service).fetch("container_name"),
-                   override_services.fetch(service).fetch("container_name")
-    end
+    assert_includes base_services, "valkey"
+    assert_includes override_services, "valkey"
+    assert_equal base_services.fetch("valkey").fetch("container_name"),
+                 override_services.fetch("valkey").fetch("container_name")
   end
 
   def test_the_primary_tunnel_connector_starts_with_the_devcontainer_stack

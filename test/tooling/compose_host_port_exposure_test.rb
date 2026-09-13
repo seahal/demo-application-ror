@@ -3,6 +3,8 @@
 require "minitest/autorun"
 require "yaml"
 
+# rubocop:disable Rails/RefuteMethods
+
 # Guards docs/operations/development-host-port-exposure.md.
 #
 # A `ports:` entry with no host address makes Podman bind 0.0.0.0, which places a development
@@ -28,7 +30,7 @@ class ComposeHostPortExposureTest < Minitest::Test
 
   # Services that must never be reachable from the host, at any bind address. Each is consumed
   # only over a Compose network, by service name.
-  DATASTORE_SERVICES = %w(primary replica valkey-cache valkey-rate-limit).freeze
+  DATASTORE_SERVICES = %w(primary replica valkey).freeze
 
   # An IPv4 or IPv6 loopback host address is the only accepted publication target.
   LOOPBACK_HOST_ADDRESSES = ["127.0.0.1", "::1"].freeze
@@ -46,7 +48,7 @@ class ComposeHostPortExposureTest < Minitest::Test
     core = load_compose(".devcontainer/compose.yaml").fetch("services").fetch("core")
 
     assert_includes core.fetch("ports"), "127.0.0.1:3001:3000"
-    assert_not_includes core.fetch("ports"), "127.0.0.1:3000:3000"
+    refute_includes core.fetch("ports"), "127.0.0.1:3000:3000"
   end
 
   def test_datastore_publications_are_loopback_only
@@ -139,3 +141,4 @@ class ComposeHostPortExposureTest < Minitest::Test
     YAML.safe_load_file(path, aliases: true) || {}
   end
 end
+# rubocop:enable Rails/RefuteMethods

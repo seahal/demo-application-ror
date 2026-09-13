@@ -14,7 +14,7 @@ class GlobalPortabilityContractTest < Minitest::Test
     POSTGRESQL_HOST POSTGRESQL_PORT POSTGRESQL_USER POSTGRESQL_PASSWORD
     POSTGRESQL_PUBLISHING_PUB POSTGRESQL_PUBLISHING_SUB
     POSTGRESQL_QUEUE_PUB POSTGRESQL_STORAGE_PUB POSTGRESQL_PRIMARY_PUB
-    CACHE_REDIS_URL RATE_LIMIT_REDIS_URL OBJECT_STORAGE_ENDPOINT
+    CACHE_REDIS_URL RATE_LIMIT_REDIS_URL AUTH_STATE_REDIS_URL OBJECT_STORAGE_ENDPOINT
     PUBLIC_AUTH_SERVICE_URL PUBLIC_BASE_SERVICE_URL PRIVATE_AUTH_SERVICE_URL PRIVATE_BASE_SERVICE_URL
     VITE_RUBY_PACKAGE_MANAGER
   ).freeze
@@ -28,7 +28,9 @@ class GlobalPortabilityContractTest < Minitest::Test
     assert_equal "127.0.0.1", host.fetch("POSTGRESQL_PUBLISHING_PUB")
     assert_equal "primary", container.fetch("POSTGRESQL_PUBLISHING_PUB")
     assert_equal "replica", container.fetch("POSTGRESQL_PUBLISHING_SUB")
-    assert_equal "redis://valkey-cache:6379/0", container.fetch("CACHE_REDIS_URL")
+    assert_equal "redis://valkey:6379/0", container.fetch("CACHE_REDIS_URL")
+    assert_equal "redis://valkey:6379/1", container.fetch("RATE_LIMIT_REDIS_URL")
+    assert_equal "redis://valkey:6379/2", container.fetch("AUTH_STATE_REDIS_URL")
     assert_equal "http://fakecloud:4566", container.fetch("OBJECT_STORAGE_ENDPOINT")
   end
 
