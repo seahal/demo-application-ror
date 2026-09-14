@@ -193,8 +193,3 @@ node_modules
 /compose.override.yaml
 /.devcontainer/compose.override.yml
 
-# Opt-in fakecloud Podman-socket overlay. Not auto-discovered -- it applies only
-# when passed with an explicit `-f` -- and never committed: it grants fakecloud
-# full container-management rights under the invoking user, and its
-# ${XDG_RUNTIME_DIR} path is UID-dependent.
-/compose.msk.yaml

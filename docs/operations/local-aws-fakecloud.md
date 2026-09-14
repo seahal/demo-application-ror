@@ -44,20 +44,13 @@ complete container-management rights — the ability to start any image and bind
 the user can reach.
 
 > **Amended 2026-09-14.** `compose.yaml` still mounts no container socket, and the statement above
-> is why. A socket mount now exists as a deliberate, risk-accepted **opt-in** overlay in the
-> gitignored `compose.msk.yaml`, so the MSK data plane can be exercised — see
-> `evidence/2026-09-14-fakecloud-podman-socket.md`. Nothing auto-discovers that filename, so it
-> applies only when passed with an explicit `-f`:
->
-> ```bash
-> podman compose -f compose.yaml -f compose.override.yaml -f compose.msk.yaml up -d fakecloud
-> ```
->
-> A `profiles:` key could not be used for this: profiles gate a whole service and Compose takes the
-> last value, so profiling a fakecloud override would stop a bare `podman compose up` from starting
-> fakecloud at all — taking S3 down with it. The overlay is also
-> `${XDG_RUNTIME_DIR}`-dependent and therefore not portable. Every path that omits the file, the Dev
-> Container included, gets a socket-free fakecloud, and the text below describes that behaviour.
+> is why. A socket mount was added to `compose.override.yaml` as a deliberate, risk-accepted
+> exception so the MSK data plane can be exercised — see
+> `evidence/2026-09-14-fakecloud-podman-socket.md`. That file was untracked and gitignored the same
+> day, so the mount stays on one machine and reaches no other clone. It is also
+> `${XDG_RUNTIME_DIR}`-dependent and therefore not portable, and `devcontainer.json` passes explicit
+> `-f` flags that exclude `compose.override.yaml`, so the Dev Container path still gets a
+> socket-free fakecloud. The text below describes the unmodified `compose.yaml` behaviour.
 
 Without a socket fakecloud serves the MSK control plane with the _same response shapes_, which is
 what the Terraform resources in `terraform/` exercise. `GetBootstrapBrokers` therefore returns

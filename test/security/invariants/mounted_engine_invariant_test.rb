@@ -70,10 +70,9 @@ module Security
         # Rails mounts the ActionCable server by default. The application defines no
         # channels and no Connection class, so there is no reachable subscription.
         "/cable" => "ActionCable::Server::Base",
-        # Feature-flag UI on the developer host. Guarded by Rack::Auth::Basic in
-        # config/routes/base.rb, which fails closed when credentials are unset.
-        # Feature-flag UI, dedicated host (config/routes/flipper.rb). Guarded by Rack::Auth::Basic,
-        # which fails closed when credentials are unset.
+        # Feature-flag UI on its dedicated hosts (config/routes/flipper.rb). Guarded by
+        # Rack::Auth::Basic, which fails closed when credentials are unset.
+        "flipper.umaxica.dev /" => "Rack::Auth::Basic",
         "flipper.core.dev.localhost /" => "Rack::Auth::Basic",
         # Solid Queue job-monitoring UI, dedicated host (config/routes/mission.rb). Guarded by
         # MissionControl::Jobs' own HTTP Basic Auth (config/initializers/mission_control_jobs.rb),

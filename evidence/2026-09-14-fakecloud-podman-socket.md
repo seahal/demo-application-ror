@@ -7,10 +7,9 @@ user** before the change was made.
 
 ## What was added
 
-A new gitignored file, `compose.msk.yaml`:
+In `compose.override.yaml`:
 
 ```yaml
-name: umaxicaappsglobaldc
 services:
   fakecloud:
     environment:
@@ -23,22 +22,23 @@ Only the differing keys are set. `image`, `ports`, `command`, and the rest are i
 `compose.yaml`, which is unmodified. On this machine `XDG_RUNTIME_DIR` is `/run/user/1000` and
 `/run/user/1000/podman/podman.sock` exists (`srw------- mslo mslo`).
 
-### Why a separate file rather than a profile
+### Why it is unprofiled, and why that is fine
 
-The block first went into `compose.override.yaml` unprofiled, which meant it applied to every bare
-`podman compose up`. Making it opt-in via `profiles:` does not work: **profiles gate an entire
+`compose.override.yaml` carried a rule that everything in it be profile-gated. That rule existed
+because the file was **tracked** and therefore shipped to every clone; an unprofiled entry there
+would have changed every developer's `podman compose up`. Untracking the file removes the reason,
+so the socket mount is left unprofiled and applies to every bare `podman compose up` on this
+machine — which is the intent.
+
+A `profiles:` key could not have expressed "socket optional" in any case. **Profiles gate an entire
 service, not individual keys**, and Compose resolves `profiles:` to the value in the last file that
-sets one. A profiled fakecloud override therefore gates fakecloud itself, and a bare
-`podman compose up` would stop starting it — taking S3, the one surface actually in use, down with
-it. `compose.yaml` deliberately leaves fakecloud unprofiled for that reason, as
+sets one. A profiled fakecloud override would gate fakecloud itself, so a bare `podman compose up`
+would stop starting it — taking S3, the one surface actually in use, down with it. `compose.yaml`
+deliberately leaves fakecloud unprofiled for that reason, as
 `docs/operations/local-aws-fakecloud.md` records.
 
-A separate filename is opt-in by construction: Compose auto-discovers only `compose.override.yaml`,
-so `compose.msk.yaml` is read only when named with `-f`.
-
-```bash
-podman compose -f compose.yaml -f compose.override.yaml -f compose.msk.yaml up -d fakecloud
-```
+To return to a socket-free fakecloud, delete the block; `compose.yaml` defines the service without
+it.
 
 ## What this grants
 
@@ -71,8 +71,7 @@ precisely to stop a future change from reversing this silently.
 ## Scope limits that still hold
 
 - **`compose.yaml` is unchanged.** It still mounts no container socket anywhere.
-- **The Dev Container is unaffected.** It never names `compose.msk.yaml`.
-  `.devcontainer/devcontainer.json` sets
+- **The Dev Container is unaffected.** `.devcontainer/devcontainer.json` sets
   `dockerComposeFile: ["../compose.yaml", "./compose.yaml"]`, and those explicit `-f` flags
   suppress Compose's auto-discovery of `compose.override.yaml`. `devcontainer up` therefore starts
   a fakecloud **without** the socket. Only a bare `podman compose up` picks the mount up. The two
@@ -84,9 +83,9 @@ precisely to stop a future change from reversing this silently.
 ## Committing
 
 `compose.override.yaml` **was** a tracked file when this block was first written there, which would
-have shipped the socket mount to every developer and to CI. It was untracked and gitignored the same
-day, along with `.devcontainer/compose.override.yml`. `compose.msk.yaml`, where the overlay now
-lives, is gitignored from the start. Nothing carrying the socket mount is tracked.
+have shipped the socket mount to every developer and to CI. It was untracked with
+`git rm --cached` and gitignored the same day, along with `.devcontainer/compose.override.yml`.
+Nothing carrying the socket mount is tracked.
 
 ## Not verified
 
