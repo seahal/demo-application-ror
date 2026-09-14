@@ -1,0 +1,138 @@
+---
+# The developer-local Compose override, and the opt-in remote-access overlay.
+#
+# The repository root has exactly two Compose files:
+#
+#   compose.yaml           = the complete standard environment (no `core`).
+#   compose.override.yaml  = this file. Tracked.
+#
+# `.devcontainer/compose.yaml` adds the Rails `core` service and is loaded by
+# `.devcontainer/devcontainer.json`; it is not a root file and is not merged here.
+#
+# `docker compose` / `podman compose` auto-discover this file when no `-f` is
+# given. `devcontainer.json` names its files explicitly, so the Dev Containers
+# CLI passes `-f` and this file is NOT loaded there. Everything below is written
+# to be inert in both cases unless a profile is selected.
+#
+# Never put a secret in here, and never a `${VAR:?}` -- Compose interpolates the
+# whole file whichever service is named, so a required variable stops every
+# command, including ones for services you never start.
+
+# Must match `compose.yaml`'s `name:`. Compose takes the project name from the
+# LAST file that sets one, so a different value forks the project: a second set
+# of containers and, worse, a second set of named volumes -- the development
+# PostgreSQL, Valkey, bundle and node_modules would all be orphaned.
+# Must match `compose.yaml`'s `name:` exactly, separators included -- see the
+# comment there for why the Dev Containers CLI forces the unseparated form.
+name: umaxicaappsglobaldc
+
+services:
+  # ---------------------------------------------------------------------------
+  # Remote SSH into `core` over Tailscale, for Codex App and any other Remote-SSH
+  # client.
+  #
+  #   client --- tailnet tcp/22 ---> tailscaled in core --- 127.0.0.1:2222 ---> sshd
+  #
+  # Tailscale runs INSIDE `core` rather than as a sidecar: the Containerfile bakes
+  # the pinned client, and remote-sshd-entrypoint starts tailscaled in
+  # userspace-networking mode -- no /dev/net/tun, no NET_ADMIN, no root, so `core`'s
+  # `cap_drop: ALL` and `no-new-privileges` hold unchanged. It never runs
+  # `tailscale up --ssh`: Tailscale SSH would bypass sshd and the authorized-keys
+  # contract below.
+  #
+  # Opt-in, and the `remote-access` profile is what keeps it opt-in now that this
+  # overlay lives in an auto-discovered file. Without `--profile remote-access`,
+  # `core` is defined ONLY here and only under that profile, so a bare
+  # `podman compose up` resolves to the infrastructure services and never to sshd.
+  # The Dev Containers CLI passes explicit `-f` flags and does not load this file
+  # at all, so `devcontainer up` is likewise unaffected.
+  #
+  # Run `.devcontainer/remote-access-preflight.sh` first, then:
+  #
+  #   podman compose -f compose.yaml -f .devcontainer/compose.yaml \
+  #                  -f compose.override.yaml --profile remote-access up -d
+  #
+  # `.devcontainer/compose.yaml` is where `core` is actually defined, so it has to
+  # be in the invocation and this file has to come after it: Compose takes the
+  # LAST value for `profiles:`, which is what lets the profile apply here while
+  # leaving `core` unprofiled on the Dev Container path.
+  #
+  # This overlay is kept identical across umaxica-apps-global, umaxica-apps-edge
+  # and portal apart from the account name and the tailnet hostname. See
+  # plans/global-portal-edge-dreamy-spring.md for the shared contract.
+  core:
+    profiles:
+      - remote-access
+    # Replaces the idle command. Both files below are baked into the image at
+    # 0555/0444 under root ownership, so the workspace bind -- which `global` owns
+    # and any development shell can write -- cannot influence what this runs or
+    # which keys it accepts. `overrideCommand: false` in devcontainer.json is what
+    # lets this survive `devcontainer up`.
+    command: /usr/local/bin/remote-sshd-entrypoint
+    environment:
+      # Bootstrap only, and `:-` rather than `:?` on purpose: the key is single-use
+      # and revoked immediately after enrolment, so requiring it here would make
+      # every later start fail. `.devcontainer/remote-access-preflight.sh` is what
+      # enforces "present on the first start, absent on every one after".
+      TS_AUTHKEY: "${TS_AUTHKEY:-}"
+    volumes:
+      # sshd's host key and PID file. A volume, not the workspace: the private
+      # host key must never be written into a bind-mounted git repository, and the
+      # fingerprint has to survive a container recreate.
+      - type: volume
+        source: sshd-host-keys
+        target: /home/global/.local/state/remote-sshd
+      # Podman mounts /run as a root-owned tmpfs, so the privilege-separation
+      # directory baked into the image disappears at runtime and sshd exits with
+      # "Missing privilege separation directory". An empty named volume restores a
+      # writable one; Podman seeds its ownership from the image path.
+      - type: volume
+        source: sshd-run
+        target: /run/sshd
+      # The tailnet node's identity. Surviving `podman compose down` is the entire
+      # point: without it every start registers a NEW node and the tailnet name
+      # drifts to umaxica-global-core-1, -2, ... `down -v` destroys it and forces
+      # a fresh enrolment with a fresh key.
+      - type: volume
+        source: tailscale-state
+        target: /home/global/.local/state/tailscale
+      # The PUBLIC key Codex App connects with, and the single deliberate
+      # exception to the no-host-credentials rule. A public key is not a
+      # credential. Read-only, one file, and outside the workspace, so nothing
+      # with a shell here can grant itself new access.
+      #
+      # Deliberately NOT the host's ~/.ssh/authorized_keys: that file admits every
+      # key that can log into the host, which is a far wider grant than this
+      # container needs. `.secrets/` is gitignored in all three repositories.
+      - type: bind
+        source: ./.secrets/codex_authorized_keys
+        target: /home/global/.config/umaxica/authorized_keys
+        read_only: true
+
+# Declared here because the `core` overlay above mounts them. Compose creates a
+# named volume only when a started service references it, so these cost nothing
+# on the paths that never select the `remote-access` profile.
+volumes:
+  tailscale-state:
+    driver: local
+  sshd-host-keys:
+    driver: local
+  sshd-run:
+    driver: local
+
+# Machine-specific settings -- host devices such as /dev/fuse, personal tooling
+# mounts, extra published ports -- belong in this file too, added locally and NOT
+# committed. See docs/operations/development-container-targets.md.
+#
+# Root Compose intentionally has no Rails service. To customize Dev Container
+# `core` beyond the remote-access overlay above, edit the tracked
+# `.devcontainer/compose.yaml`; do not add an unprofiled `core` back to this file
+# -- it would make `core` start on a bare `podman compose up`, which the Dev
+# Container path does not expect.
+#
+# The Cloudflare Tunnel connectors are NOT here. They live in `compose.yaml`.
+# The primary connector (`cloudflare-tunnel`) starts with the stack and reads
+# CLOUDFLARED_TOKEN from the gitignored root `.env`. The alternative tunnel
+# stays opt-in:
+#
+#   docker compose --profile tunnel-edge up -d   # CLOUDFLARED_EDGE_TOKEN

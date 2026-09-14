@@ -165,10 +165,12 @@ class BaseAuthorityRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{BASE_APP_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "base/app/sign_outs", action: "destroy" },
-      { path: "http://#{BASE_APP_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_APP_HOST}/sign/out",
+        method: :delete,
+      )
+    end
 
     assert_raises(ActionController::RoutingError) do
       Rails.application.routes.recognize_path("http://#{BASE_APP_HOST}/sso/authorize", method: :get)
@@ -518,10 +520,12 @@ class BaseAuthorityRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{BASE_COM_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "base/com/sign_outs", action: "destroy" },
-      { path: "http://#{BASE_COM_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_COM_HOST}/sign/out",
+        method: :delete,
+      )
+    end
 
     [
       { path: "/sso/authorize", method: :get },
@@ -742,10 +746,12 @@ class BaseAuthorityRouteContractTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("http://#{BASE_ORG_HOST}/sign/out/complete", method: :get)
     end
 
-    assert_recognizes(
-      { controller: "base/org/sign_outs", action: "destroy" },
-      { path: "http://#{BASE_ORG_HOST}/sign/out", method: :delete },
-    )
+    assert_raises(ActionController::RoutingError) do
+      Rails.application.routes.recognize_path(
+        "http://#{BASE_ORG_HOST}/sign/out",
+        method: :delete,
+      )
+    end
   end
 
   test "base authority org route contract (continued)" do

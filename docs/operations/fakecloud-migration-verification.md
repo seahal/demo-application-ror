@@ -28,7 +28,7 @@ script was therefore orphaned; it was removed rather than corrected. Development
 are fixed literals in `compose.yaml` (`docs/operations/development-credential-provisioning.md`).
 
 The one file it created that something still reads is `.secrets/codex_authorized_keys`, whose bind
-mount in `compose.remote-access.yaml` needs a file to exist.
+mount in `compose.override.yaml`'s `remote-access` overlay needs a file to exist.
 `docs/operations/remote-codex-over-tailscale.md` already documents creating it by hand as step 1 of
 enrolment.
 
@@ -132,7 +132,7 @@ Run on a machine that can rebuild. Record failures here rather than deleting the
 
 - [ ] `fakecloud` reaches healthy — **this exercises the untested `/dev/tcp` probe.** If it fails,
       the fallback is to install `curl` in a derived image or to drop to a plain TCP-connect probe;
-      do not silently remove the healthcheck, because `fdw-poc` depends on `service_healthy`.
+      do not silently remove the healthcheck.
 - [ ] `curl -s http://localhost:4566/_fakecloud/health` returns `{"status":"ok",...}` from the host
 - [ ] `core` reaches `http://fakecloud:4566`
 - [ ] persistence: create a bucket, `podman compose down`, `up` — the bucket survives

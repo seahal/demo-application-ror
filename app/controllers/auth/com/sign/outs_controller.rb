@@ -17,16 +17,16 @@ module Auth
 
         after_action :sign_out_notice_cache_headers!, only: %i(show edit)
 
+        def show
+          complete_oidc_rp_logout!
+        end
+
         def new
           redirect_to(sign_out_edit_path, status: :see_other)
         end
 
         def edit
           render "auth/shared/sign_outs/edit"
-        end
-
-        def show
-          complete_oidc_rp_logout!
         end
 
         def create

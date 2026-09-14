@@ -1366,6 +1366,9 @@ ja:
         update_success: 設定を更新しました
       roots:
         message: Thin landing endpoint.
+    dev:
+      roots:
+        message: Thin landing endpoint.
     org:
       identity:
         secret_credentials:
@@ -1943,6 +1946,9 @@ ja:
       preferences:
         footer:
           preference: 設定
+    dev:
+      roots:
+        message: Thin landing endpoint.
     org:
       preference:
         emails:

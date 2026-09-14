@@ -56,53 +56,67 @@ class BaseIdentitySessionsPresentationTest < ActionDispatch::IntegrationTest
 
       assert_equal 200, test_session.response.status
       props = inertia_props_from(test_session.response.body)
-      rows = props.fetch("sessions")
-      row = rows.find { |session| session.fetch("status") == "現在のセッション" }
 
-      assert_predicate row, :present?
-      expected_keys = %w(created device expires_at last_activity revoke status)
-      expected_keys << "mode" if surface == :org
-
-      assert_equal expected_keys.sort, row.keys.sort
-      assert_equal "不明なデバイス", row.fetch("device")
-      assert_match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/, row.fetch("created"))
-      assert_match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/, row.fetch("expires_at"))
-      assert_equal "現在のセッション", row.fetch("status")
-      assert_nil row.fetch("revoke")
-      assert_equal "緊急アクセス", row.fetch("mode") if surface == :org
-
-      assert_not row.key?("public_id")
-      assert_not row.key?("kind")
-      assert_not row.key?("binding")
-      assert_not row.key?("refresh_expires")
-      assert_not row.key?("refresh_token_generation")
-      assert_equal "このセッションはこの時刻に終了します。この期限は延長されません。",
-                   props.fetch("expires_at_description")
-
-      other_row = rows.find { |session| session.fetch("revoke").present? }
-
-      assert_predicate other_row, :present?
-      other_href = URI.join("https://#{host}", other_row.fetch("revoke").fetch("href")).to_s
-      other_public_id = URI.parse(other_href).path.split("/").last
-      other_token = token.class.find_by!(public_id: other_public_id)
-      if surface == :org
-        assert_equal "通常", other_row.fetch("mode")
-        assert_predicate other_token, :dbsc_enabled?
-        assert_not_predicate token, :dbsc_enabled?
-      end
-      test_session.delete(other_href, headers: request_headers(host, token, access_token))
-
-      assert_equal 303, test_session.response.status
-      assert_predicate other_token.reload, :revoked?
-
-      test_session.delete(
-        session_path(surface, token.public_id, host),
-        headers: request_headers(host, token, access_token),
-      )
-
-      assert_equal 303, test_session.response.status
-      assert_not_predicate token.reload, :revoked?
+      assert_current_session_contract(props, surface)
+      assert_other_session_revocation(test_session, props, surface, token, host, access_token)
+      assert_cannot_revoke_current_session(test_session, token, host, access_token, surface)
     end
+  end
+
+  private
+
+  def assert_current_session_contract(props, surface)
+    rows = props.fetch("sessions")
+    row = rows.find { |session| session.fetch("status") == "現在のセッション" }
+
+    assert_predicate row, :present?
+    expected_keys = %w(created device expires_at last_activity revoke status)
+    expected_keys << "mode" if surface == :org
+
+    assert_equal expected_keys.sort, row.keys.sort
+    assert_equal "不明なデバイス", row.fetch("device")
+    assert_match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/, row.fetch("created"))
+    assert_match(/\A\d{4}-\d{2}-\d{2} \d{2}:\d{2}\z/, row.fetch("expires_at"))
+    assert_equal "現在のセッション", row.fetch("status")
+    assert_nil row.fetch("revoke")
+    assert_equal "緊急アクセス", row.fetch("mode") if surface == :org
+
+    assert_not row.key?("public_id")
+    assert_not row.key?("kind")
+    assert_not row.key?("binding")
+    assert_not row.key?("refresh_expires")
+    assert_not row.key?("refresh_token_generation")
+    assert_equal "このセッションはこの時刻に終了します。この期限は延長されません。",
+                 props.fetch("expires_at_description")
+  end
+
+  def assert_other_session_revocation(test_session, props, surface, token, host, access_token)
+    rows = props.fetch("sessions")
+    other_row = rows.find { |session| session.fetch("revoke").present? }
+
+    assert_predicate other_row, :present?
+    other_href = URI.join("https://#{host}", other_row.fetch("revoke").fetch("href")).to_s
+    other_public_id = URI.parse(other_href).path.split("/").last
+    other_token = token.class.find_by!(public_id: other_public_id)
+    if surface == :org
+      assert_equal "通常", other_row.fetch("mode")
+      assert_predicate other_token, :dbsc_enabled?
+      assert_not_predicate token, :dbsc_enabled?
+    end
+    test_session.delete(other_href, headers: request_headers(host, token, access_token))
+
+    assert_equal 303, test_session.response.status
+    assert_predicate other_token.reload, :revoked?
+  end
+
+  def assert_cannot_revoke_current_session(test_session, token, host, access_token, surface = :app)
+    test_session.delete(
+      session_path(surface, token.public_id, host),
+      headers: request_headers(host, token, access_token),
+    )
+
+    assert_equal 303, test_session.response.status
+    assert_not_predicate token.reload, :revoked?
   end
 
   def assert_expired_session_cannot_authenticate(surface)

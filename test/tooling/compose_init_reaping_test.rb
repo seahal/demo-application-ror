@@ -12,7 +12,7 @@ class ComposeInitReapingTest < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
   COMPOSE_FILES = [
     "compose.yaml",
-    "compose.override.yaml.example",
+    "compose.override.yaml",
     ".devcontainer/compose.yaml",
     ".devcontainer/compose.override.yml",
   ].freeze

@@ -4,12 +4,17 @@ require "minitest/autorun"
 require "json"
 require "yaml"
 
-# The local-override contract.
+# The root-Compose contract. The repository root holds exactly two Compose files:
 #
-#   compose.yaml                       the complete standard environment
-#   .devcontainer/compose.yaml tracked; the Dev Container's own overlay
-#   compose.override.yaml              optional, gitignored, per developer/machine
-#   compose.override.yaml.example      tracked documentation, never required
+#   compose.yaml           the complete standard environment; no `core`
+#   compose.override.yaml  tracked; auto-discovered; everything in it profile-gated
+#
+#   .devcontainer/compose.yaml         tracked; the Dev Container's own overlay
+#   .devcontainer/compose.override.yml tracked; container names
+#
+# `compose.override.yaml` is auto-discovered by a bare `docker compose` / `podman
+# compose`, so anything it adds must sit behind a `profiles:` entry -- otherwise the
+# opt-in `remote-access` overlay would replace `core`'s command on every plain `up`.
 #
 # A fresh `git clone` plus a container engine must be enough to resolve the Compose
 # configuration and to open the Dev Container. Nothing may depend on a file the clone
@@ -24,13 +29,12 @@ require "yaml"
 class ComposeLocalOverrideOptionalTest < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
 
-  # The Compose files a standard development `up` resolves. The optional
-  # `compose.override.yaml` is absent by design, and the `fdw-poc` experiment files are
-  # excluded on purpose: they are never merged into this project, are invoked explicitly
-  # with their own `-f`, and are allowed to demand their own variables.
+  # The Compose files a standard development `up` resolves. These are now all of them:
+  # the `fdw-poc` experiment overlays were the last files invoked with their own `-f`,
+  # and they were removed with the PoC.
   STANDARD_COMPOSE_FILES = %w(
     compose.yaml
-    compose.override.yaml.example
+    compose.override.yaml
     .devcontainer/compose.yaml
   ).freeze
 
@@ -79,34 +83,60 @@ class ComposeLocalOverrideOptionalTest < Minitest::Test
     end
   end
 
-  def test_the_local_override_is_not_tracked
-    tracked = git_tracked_files
+  def test_the_root_holds_exactly_two_compose_files
+    root_files = git_tracked_files.grep(%r{\A[^/]+\z}).grep(/\Acompose.*\.ya?ml\z/).sort
 
-    refute_includes tracked, "compose.override.yaml",
-                    "the developer-local override must stay out of git"
-    refute_includes tracked, "compose.custom.yaml",
-                    "compose.custom.yaml is retired and must not come back"
+    assert_equal %w(compose.override.yaml compose.yaml), root_files,
+                 "the repository root must hold exactly compose.yaml and compose.override.yaml; " \
+                 "merge any other root Compose file into one of them"
 
     gitignore = File.read(File.join(REPOSITORY_ROOT, ".gitignore"))
 
-    assert_match(/^\/compose\.override\.yaml$/, gitignore)
+    refute_match(
+      /^\/compose\.override\.yaml$/, gitignore,
+      "compose.override.yaml is tracked now and must not be ignored",
+    )
   end
 
-  def test_the_example_matches_the_current_schema
-    # The example is documentation, and a stale example is worse than none: it must parse,
-    # and it must only name services that still exist.
-    example = YAML.safe_load_file(
-      File.join(REPOSITORY_ROOT, "compose.override.yaml.example"), aliases: true,
-    )
-    base = YAML.safe_load_file(File.join(REPOSITORY_ROOT, "compose.yaml"), aliases: true)
+  def test_the_root_override_matches_the_current_schema
+    override = load_compose("compose.override.yaml")
+    base = load_compose("compose.yaml")
 
-    assert_equal base.fetch("name"), example.fetch("name"),
+    assert_equal base.fetch("name"), override.fetch("name"),
                  "a divergent project name forks the volume set"
 
-    example.fetch("services", {}).each_key do |service|
-      assert_includes base.fetch("services").keys, service,
-                      "the example override names a service compose.yaml does not define"
+    known = base.fetch("services").keys +
+      load_compose(".devcontainer/compose.yaml").fetch("services").keys
+
+    override.fetch("services", {}).each_key do |service|
+      assert_includes known, service,
+                      "the root override names a service no tracked Compose file defines"
     end
+  end
+
+  def test_every_service_in_the_root_override_is_profile_gated
+    # The file is auto-discovered, so an unprofiled service here would take effect on
+    # every bare `docker compose up`. The `remote-access` overlay replaces `core`'s
+    # command with sshd, which must never happen implicitly.
+    load_compose("compose.override.yaml").fetch("services", {}).each do |name, definition|
+      refute_empty Array(definition["profiles"]),
+                   "#{name} in compose.override.yaml has no profiles: entry, so it would " \
+                   "apply to a bare compose up"
+    end
+  end
+
+  def test_the_remote_access_overlay_leaves_core_unprofiled_on_the_devcontainer_path
+    # Compose takes the LAST value for `profiles:`. The Dev Containers CLI never loads
+    # compose.override.yaml, so `core` must stay unprofiled where it is defined.
+    core = load_compose(".devcontainer/compose.yaml").fetch("services").fetch("core")
+
+    refute core.key?("profiles"),
+           "core must start with the Dev Container lifecycle, not sit behind a profile"
+
+    overlay = load_compose("compose.override.yaml").fetch("services").fetch("core")
+
+    assert_includes overlay.fetch("profiles"), "remote-access"
+    assert_equal "/usr/local/bin/remote-sshd-entrypoint", overlay.fetch("command")
   end
 
   def test_devcontainer_override_names_the_single_nonprod_valkey_from_the_base_compose

@@ -98,10 +98,6 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  ## Letter Opener => https://github.com/ryanb/letter_opener
-  #  config.action_mailer.delivery_method = :letter_opener
-  # config.action_mailer.perform_deliveries = true
-
   # Raise on deprecation warnings to catch issues early.
   config.active_support.deprecation = :raise
 
@@ -221,6 +217,7 @@ Rails.application.configure do
     core.app.localhost:3000
     core.net.localhost:3000
     core.dev.localhost:3000
+    core.dev.localhost:3001
     docs.com.localhost:3000
     docs.org.localhost:3000
     docs.app.localhost:3000
@@ -236,6 +233,14 @@ Rails.application.configure do
     palm.app.localhost:3000
     guid.net.localhost:3000
     edit.org.localhost:3000
+    mission.core.dev.localhost:3000
+    mission.core.dev.localhost:3001
+    flipper.core.dev.localhost:3000
+    flipper.core.dev.localhost:3001
+    blazer.core.dev.localhost:3000
+    blazer.core.dev.localhost:3001
+    pghero.core.dev.localhost:3000
+    pghero.core.dev.localhost:3001
   )
 
   # Both families, deliberately. Per adr/public-private-url-boundaries.md, `PUBLIC_*` names
@@ -257,12 +262,17 @@ Rails.application.configure do
     PRIVATE_CORE_SERVICE_URL
     PRIVATE_CORE_STAFF_URL
     PRIVATE_CORE_CORPORATE_URL
+    PRIVATE_CORE_DEVELOPER_URL
     PRIVATE_PALM_SERVICE_URL
     PRIVATE_INFO_SERVICE_URL
     PRIVATE_INFO_STAFF_URL
     PRIVATE_INFO_CORPORATE_URL
     PRIVATE_GUID_SERVICE_URL
     PRIVATE_EDIT_STAFF_URL
+    PRIVATE_MISSION_URL
+    PRIVATE_FLIPPER_URL
+    PRIVATE_BLAZER_URL
+    PRIVATE_PGHERO_URL
     PRIVATE_DOCS_SERVICE_URL
     PRIVATE_DOCS_STAFF_URL
     PRIVATE_DOCS_CORPORATE_URL
@@ -282,6 +292,7 @@ Rails.application.configure do
     PUBLIC_CORE_SERVICE_URL
     PUBLIC_CORE_CORPORATE_URL
     PUBLIC_CORE_STAFF_URL
+    PUBLIC_CORE_DEVELOPER_URL
     PUBLIC_SIDE_SERVICE_URL
     PUBLIC_SIDE_CORPORATE_URL
     PUBLIC_SIDE_STAFF_URL
@@ -291,6 +302,10 @@ Rails.application.configure do
     PUBLIC_INFO_STAFF_URL
     PUBLIC_GUID_SERVICE_URL
     PUBLIC_EDIT_STAFF_URL
+    PUBLIC_MISSION_URL
+    PUBLIC_FLIPPER_URL
+    PUBLIC_BLAZER_URL
+    PUBLIC_PGHERO_URL
     PUBLIC_DOCS_SERVICE_URL
     PUBLIC_DOCS_CORPORATE_URL
     PUBLIC_DOCS_STAFF_URL

@@ -47,7 +47,8 @@ module Base
 
         def activity_columns
           %i(occurred_at activity device source risk).index_with do |column|
-            t("base.shared.identity.activities.columns.#{column}")
+            key = "base.shared.identity.activities.columns.#{column}"
+            t(key)
           end
         end
       end

@@ -84,12 +84,14 @@ module Base
         return if values.nil? || values.fetch(:visibility) == "internal"
 
         risk = values.fetch(:risk)
+        activity_key_str = "base.shared.identity.activities.events.#{activity_key(activity, values)}"
+        risk_key_str = "base.shared.identity.activities.risks.#{risk}"
         {
           occurred_at: localized_session_timestamp(activity.occurred_at || activity.created_at),
-          activity: I18n.t("base.shared.identity.activities.events.#{activity_key(activity, values)}"),
+          activity: I18n.t(activity_key_str),
           device: device_summary(activity),
           source: I18n.t("base.shared.identity.activities.unknown_location"),
-          risk: I18n.t("base.shared.identity.activities.risks.#{risk}"),
+          risk: I18n.t(risk_key_str),
           risk_rank: risk_rank(risk),
         }
       end

@@ -276,7 +276,8 @@ scope module: :core, as: :core do
   end
 
   # Developer utility host.
-  constraints host: [ENV["PRIVATE_CORE_DEVELOPER_URL"] || ENV["CORE_DEVELOPER_URL"], "core.dev.localhost"].compact do
+  constraints host: [ENV["PUBLIC_CORE_DEVELOPER_URL"], ENV["PRIVATE_CORE_DEVELOPER_URL"] || ENV["CORE_DEVELOPER_URL"],
+                     "core.dev.localhost",].compact do
     scope module: :dev, as: :developer do
       # Thin landing endpoint.
       root to: "roots#index"

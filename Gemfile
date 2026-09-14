@@ -231,10 +231,6 @@ group :development do
   gem "foreman", require: false
   # Documentation generator.
   gem "yard", require: false
-  # Browser email previewer.
-  gem "letter_opener", require: false
-  # Web UI for email previews.
-  gem "letter_opener_web", require: false
   # Hotwire live reload helper.
   gem "hotwire-spark"
   # Rails live reload helper.

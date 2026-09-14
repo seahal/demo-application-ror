@@ -35,6 +35,7 @@ class RiRoutingContractTest < ActiveSupport::TestCase
     auth/app auth/com auth/org
     base/app base/com base/org
     core/app core/com core/org
+    edit/org
     side/app side/com side/org
     palm/app
   ).freeze
@@ -102,6 +103,8 @@ class RiRoutingContractTest < ActiveSupport::TestCase
     app/controllers/core/org/edge/v0/dbsc_controller.rb
     app/controllers/core/org/oidc/authorizations_controller.rb
     app/controllers/core/org/oidc/callbacks_controller.rb
+    app/controllers/edit/org/oidc/authorizations_controller.rb
+    app/controllers/edit/org/oidc/callbacks_controller.rb
     app/controllers/side/app/oidc/authorizations_controller.rb
     app/controllers/side/app/oidc/callbacks_controller.rb
     app/controllers/side/com/oidc/authorizations_controller.rb

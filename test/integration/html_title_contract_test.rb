@@ -143,11 +143,17 @@ class HtmlTitleContractTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "every routed GET HTML page carries a non-empty title" do
-    checked = []
-
-    ROOT_SURFACES.each do |surface|
+  # One test per surface host, not one test sweeping all 14 hosts x ~156 candidate paths serially:
+  # that single-test form measured 135s alone (about a quarter of the full suite's wall time),
+  # ran under one Minitest worker with no parallelism across hosts, and named every failure
+  # "every routed GET HTML page carries a non-empty title" regardless of which host broke. Splitting
+  # by host keeps the same per-request assertions and lets `parallelize` spread the 14 sweeps across
+  # workers instead of serializing them behind a single slow test.
+  ROOT_SURFACES.each do |surface|
+    test "every routed GET HTML page carries a non-empty title on #{surface.fetch(:tld)} " \
+         "(#{surface.fetch(:host)})" do
       host! surface.fetch(:host)
+      checked = []
 
       html_get_paths.each do |path|
         get(path)
@@ -156,20 +162,26 @@ class HtmlTitleContractTest < ActionDispatch::IntegrationTest
       else
         next unless response.successful? && response.media_type.to_s.start_with?("text/html")
 
-        checked << [surface.fetch(:host), path]
+        checked << path
 
         assert_equal 1, css_select("title").size, "#{path} on #{surface.fetch(:host)} needs exactly one <title>"
         assert_predicate rendered_title.strip, :present?,
                          "#{path} on #{surface.fetch(:host)} renders an empty <title>"
         assert_title_shape(rendered_title, surface.fetch(:tld))
       end
-    end
 
+      assert_predicate checked, :any?, "the HTML route sweep for #{surface.fetch(:host)} checked nothing"
+      # Surfacing what ran (and, once per class, what's excluded) keeps the sweep's scope a
+      # decision rather than a silent gap.
+      puts "HTML title sweep on #{surface.fetch(:host)}: #{checked.size} responses checked"
+    end
+  end
+
+  test "non-HTML paths are excluded from the title sweep for a documented reason" do
     skipped = non_html_get_paths
 
-    assert_predicate checked, :any?, "the HTML route sweep checked nothing"
-    # Surfacing the exclusions keeps them a decision rather than a silent gap.
-    puts "HTML title sweep: #{checked.size} responses checked, non-HTML paths excluded: #{skipped.inspect}"
+    assert_predicate skipped, :any?, "expected at least one path excluded from the HTML title sweep"
+    puts "HTML title sweep: non-HTML paths excluded: #{skipped.inspect}"
   end
 
   private

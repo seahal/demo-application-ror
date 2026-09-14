@@ -3,8 +3,8 @@
 
 module Edit
   module Org
-    class RootsController < BareController
-      AUTHENTICATION_MODE = :bare
+    class RootsController < Edit::Org::ApplicationController
+      AUTHENTICATION_MODE = :open
 
       allow_browser versions: :modern
       layout false

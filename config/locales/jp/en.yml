@@ -1244,6 +1244,9 @@ en:
         update_success: Preferences updated successfully
       roots:
         message: Thin landing endpoint.
+    dev:
+      roots:
+        message: Thin landing endpoint.
     org:
       identity:
         secret_credentials:
@@ -1821,6 +1824,9 @@ en:
       preferences:
         footer:
           preference: Preferences
+    dev:
+      roots:
+        message: Thin landing endpoint.
     org:
       preference:
         emails:

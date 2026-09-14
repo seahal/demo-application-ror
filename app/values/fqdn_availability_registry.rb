@@ -38,7 +38,8 @@ module FqdnAvailabilityRegistry
       [ENV["PRIVATE_CORE_NETWORK_URL"] || ENV["CORE_NETWORK_URL"], "core.net.localhost"]
     },
     core_developer: lambda { |_hosts|
-      [ENV["PRIVATE_CORE_DEVELOPER_URL"] || ENV["CORE_DEVELOPER_URL"], "core.dev.localhost"]
+      [ENV["PUBLIC_CORE_DEVELOPER_URL"], ENV["PRIVATE_CORE_DEVELOPER_URL"] || ENV["CORE_DEVELOPER_URL"],
+       "core.dev.localhost",]
     },
     docs_service: ->(_hosts) { [ENV["PRIVATE_DOCS_SERVICE_URL"], "docs.jp.umaxica.app", "docs.app.localhost"] },
     docs_corporate: ->(_hosts) { [ENV["PRIVATE_DOCS_CORPORATE_URL"], "docs.jp.umaxica.com", "docs.com.localhost"] },
@@ -58,6 +59,18 @@ module FqdnAvailabilityRegistry
     edit_staff: lambda { |hosts|
       [hosts.edit_staff.host, ENV["PUBLIC_EDIT_STAFF_URL"], ENV["PRIVATE_EDIT_STAFF_URL"],
        "edit.umaxica.org", "edit.org.localhost",]
+    },
+    mission: lambda { |_hosts|
+      [ENV["PUBLIC_MISSION_URL"], ENV["PRIVATE_MISSION_URL"], "mission.core.dev.localhost"]
+    },
+    flipper: lambda { |_hosts|
+      [ENV["PUBLIC_FLIPPER_URL"], ENV["PRIVATE_FLIPPER_URL"], "flipper.core.dev.localhost"]
+    },
+    blazer: lambda { |_hosts|
+      [ENV["PUBLIC_BLAZER_URL"], ENV["PRIVATE_BLAZER_URL"], "blazer.core.dev.localhost"]
+    },
+    pghero: lambda { |_hosts|
+      [ENV["PUBLIC_PGHERO_URL"], ENV["PRIVATE_PGHERO_URL"], "pghero.core.dev.localhost"]
     },
     side_service: ->(hosts) { [hosts.side_service.host, "wide.app.localhost"] },
     side_corporate: ->(hosts) { [hosts.side_corporate.host, "wide.com.localhost"] },

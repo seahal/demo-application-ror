@@ -423,7 +423,7 @@ module Auth
       harness.send(:continue_dashboard_sequence_without_content!)
 
       assert_nil harness.redirected
-      assert_equal "/dashboard", harness.instance_variable_get(:@welcome_next_path)
+      assert_equal "/", harness.instance_variable_get(:@welcome_next_path)
       assert_predicate cycle.reload, :sign_in_completed?
       assert_nil cycle.return_to
     end

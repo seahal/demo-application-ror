@@ -79,7 +79,7 @@ request the same documented `/_fakecloud/health` endpoint with no added package.
 Querying the GHCR tag list directly shows only `latest`, `main`, and `sha-<commit>` tags — the
 project publishes no semver tag. `latest@sha256:...` is the only form that is both reproducible and
 updatable by the existing Dependabot `docker` ecosystem, and it matches the `tailscale` pin already
-in `compose.remote-access.yaml`.
+in `compose.override.yaml`'s `remote-access` overlay.
 
 ## Deviations from the Approved Plan
 

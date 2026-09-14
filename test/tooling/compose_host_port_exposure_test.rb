@@ -16,16 +16,12 @@ class ComposeHostPortExposureTest < Minitest::Test
 
   # Every tracked Compose file that participates in a development `up`, plus the opt-in
   # overlays. `.devcontainer/compose.yaml` defines `core`, whose publications the
-  # Dev Container relies on, so it belongs here too. The gitignored `compose.override.yaml` is
-  # deliberately absent: it is optional, per-machine, and not present on a fresh clone.
+  # Dev Container relies on, so it belongs here too. `compose.override.yaml` carries the
+  # profile-gated `remote-access` overlay and is auto-discovered, so it is in scope as well.
   COMPOSE_FILES = %w(
     compose.yaml
+    compose.override.yaml
     .devcontainer/compose.yaml
-    compose.override.yaml.example
-    compose.remote-access.yaml
-    .devcontainer/compose.yaml
-    podman/fdw-poc/compose.fdw-poc.yml
-    docker/fdw-poc/compose.fdw-poc.yml
   ).freeze
 
   # Services that must never be reachable from the host, at any bind address. Each is consumed

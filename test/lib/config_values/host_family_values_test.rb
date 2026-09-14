@@ -98,6 +98,7 @@ class ConfigValuesHostFamilyValuesTest < ActiveSupport::TestCase
       "INFO_CORPORATE_URL" => "info-com.example.test",
       "INFO_STAFF_URL" => "info-org.example.test",
       "GUID_SERVICE_URL" => "guid.example.test",
+      "EDIT_STAFF_URL" => "edit-org.example.test",
     }
     values = ConfigValues::HostFamilyValues.build(env: env, production: true)
 
@@ -107,6 +108,7 @@ class ConfigValuesHostFamilyValuesTest < ActiveSupport::TestCase
     assert_equal "https://palm-com.example.test", values.palm_corporate.to_s
     assert_equal "https://info-org.example.test", values.info_staff.to_s
     assert_equal "https://guid.example.test", values.guid_service.to_s
+    assert_equal "https://edit-org.example.test", values.edit_staff.to_s
     assert_not values.acme_origins.any?(&:nil?)
   end
 
@@ -262,6 +264,7 @@ class ConfigValuesHostFamilyValuesTest < ActiveSupport::TestCase
       "INFO_CORPORATE_URL" => "info-com.example.test",
       "INFO_STAFF_URL" => "info-org.example.test",
       "GUID_SERVICE_URL" => "guid.example.test",
+      "EDIT_STAFF_URL" => "edit-org.example.test",
     }
     values = ConfigValues::HostFamilyValues.build(env: env, production: true)
 

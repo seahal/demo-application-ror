@@ -7,7 +7,7 @@ class ComposeTmpfsCompatibilityTest < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
   COMPOSE_FILES = [
     "compose.yaml",
-    "compose.override.yaml.example",
+    "compose.override.yaml",
   ].freeze
 
   # Podman 6 rejects numeric uid/gid tmpfs options before the container starts, so a

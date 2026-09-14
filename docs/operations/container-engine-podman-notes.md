@@ -63,7 +63,6 @@ is the only bound Compose can express, so every long-running service declares `o
 | ----------------------------------------------------------------------------------------- | -------------- |
 | `core`, `primary`, `replica`, `valkey`, `alloy`, `loki`, `tempo`, `prometheus`, `grafana` | `on-failure:5` |
 | `fakecloud`, `cloudflare-tunnel`                                                          | `on-failure:3` |
-| `fdw-poc*`                                                                                | `"no"`         |
 
 Two consequences of that choice:
 

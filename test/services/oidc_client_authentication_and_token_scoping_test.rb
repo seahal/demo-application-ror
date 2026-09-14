@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "ostruct"
 
 # How a relying party authenticates to the token endpoint, and which surface's
 # tables an exchanged token is written into. Both pick per input, and both would
@@ -71,7 +72,10 @@ class OidcClientAuthenticationAndTokenScopingTest < ActiveSupport::TestCase
       )
 
     assert_not coordinator.send(:root_token_actor_matches?, ClientEmail.new, Object.new)
-    assert_nil coordinator.send(:root_token_from_authorization_code, Object.new)
+    assert_nil coordinator.send(
+      :resolve_root_token,
+      OpenStruct.new(base_session_ref: nil, resource_type: nil),
+    )
   end
 
   test "each usage class names the foreign key back to its own surface's token" do

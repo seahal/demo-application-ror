@@ -12,8 +12,8 @@ services:
       # `development` is the normal image. Set CORE_BUILD_TARGET=workspace in the
       # repository-local `.env` to build the nested-rootless-Podman `workspace`
       # stage instead; that stage additionally needs a `/dev/fuse` device entry,
-      # which is host-shaped and therefore belongs in your own, optional
-      # `compose.override.yaml` (see `compose.override.yaml.example`).
+      # which is host-shaped and therefore belongs in the root
+      # `compose.override.yaml`, added locally and not committed.
       # See docs/operations/development-container-targets.md.
       target: "${CORE_BUILD_TARGET:-development}"
       args:
@@ -157,6 +157,7 @@ services:
           - core.app.localhost
           - core.com.localhost
           - core.org.localhost
+          - core.dev.localhost
           - docs.app.localhost
           - docs.com.localhost
           - docs.org.localhost
@@ -194,11 +195,20 @@ services:
           - www-jp.umaxica.app
           - www-jp.umaxica.com
           - www-jp.umaxica.org
+          - jp.umaxica.dev
           - info.umaxica.app
           - info.umaxica.com
           - info.umaxica.org
           - guid.umaxica.net
           - palm-jp.umaxica.app
+          - mission.core.dev.localhost
+          - flipper.core.dev.localhost
+          - blazer.core.dev.localhost
+          - pghero.core.dev.localhost
+          - mission.umaxica.dev
+          - flipper.umaxica.dev
+          - blazer.umaxica.dev
+          - pghero.umaxica.dev
       observability: {}
       outer:
         aliases:

@@ -35,7 +35,19 @@ Rails.application.routes.draw do
   # Edit owns the staff Publishing management surface.
   draw :edit
 
+  # Mission owns the Solid Queue job-monitoring surface (Mission Control Jobs), staff-only.
+  draw :mission
+
+  # Flipper owns the feature-flag control surface (Flipper::UI), staff-only.
+  draw :flipper
+
+  # Blazer owns the SQL exploration dashboard (Blazer::Engine), staff-only, development-only.
+  draw :blazer
+
+  # PgHero owns the PostgreSQL monitoring dashboard (PgHero::Engine), staff-only, development-only.
+  draw :pghero
+
   # Any host that reached the app without matching a surface above is unknown;
   # answer it here rather than leaking a routing error.
-  get "/", to: "unknown_hosts#show"
+  get "/", to: "unknown_hosts#show" # FIXIME: I want to remove this, or use root!
 end

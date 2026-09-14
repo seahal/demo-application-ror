@@ -1474,10 +1474,19 @@ class AuthenticationSequenceGateExtraCoverageTest < ActiveSupport::TestCase
     cycle.advance_sign_in_to_guardrail!
     issued_session = ClientToken.create!(user: actor)
     @harness.session[:oidc_authorization_login_challenge] = "challenge-123"
-    issuance = Struct.new(:resume_url).new("https://resume.example/finish")
+    # `bind_session_and_register_oidc!` calls `BaseAuthAdmissionCoordinator.register_result_and_issue_resume!`
+    # directly (not `OidcAuthorizationTransactionCoordinator.register_result!`, which that method calls
+    # internally and then feeds through the real `issue_result!`/`resume_url` computation) -- so the double
+    # has to match `BaseAuthAdmissionCoordinator::Issuance`'s three fields at that same layer, or the real
+    # downstream `resume_url` computation runs against a fake transaction and the literal URL below can
+    # never come back out.
+    issuance = BaseAuthAdmissionCoordinator::Issuance.new(
+      transaction: nil, code: nil,
+      resume_url: "https://resume.example/finish",
+    )
 
     resume_url =
-      OidcAuthorizationTransactionCoordinator.stub(:register_result!, issuance) do
+      BaseAuthAdmissionCoordinator.stub(:register_result_and_issue_resume!, issuance) do
         @harness.send(:bind_session_and_register_oidc!, cycle, actor, "challenge-123", "email", issued_session)
       end
 
@@ -1501,10 +1510,15 @@ class AuthenticationSequenceGateExtraCoverageTest < ActiveSupport::TestCase
       end.new
     actor = Client.new(id: 42)
     issued_session = Struct.new(:public_id).new("session-public-2")
-    issuance = Struct.new(:resume_url).new("https://resume.example/finish-2")
+    # Same layer correction as the test above: stub the method `bind_session_and_register_oidc!` actually
+    # calls, with a double matching `BaseAuthAdmissionCoordinator::Issuance`'s real fields.
+    issuance = BaseAuthAdmissionCoordinator::Issuance.new(
+      transaction: nil, code: nil,
+      resume_url: "https://resume.example/finish-2",
+    )
 
     resume_url =
-      OidcAuthorizationTransactionCoordinator.stub(:register_result!, issuance) do
+      BaseAuthAdmissionCoordinator.stub(:register_result_and_issue_resume!, issuance) do
         @harness.send(:bind_session_and_register_oidc!, cycle, actor, "challenge-456", "email", issued_session)
       end
 

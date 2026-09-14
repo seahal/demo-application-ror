@@ -136,6 +136,7 @@ class SignRouteHostTest < ActionDispatch::IntegrationTest
       info_service: OpenStruct.new(host: ENV.fetch("PRIVATE_INFO_SERVICE_URL", "info.app.localhost")),
       info_corporate: OpenStruct.new(host: ENV.fetch("PRIVATE_INFO_CORPORATE_URL", "info.com.localhost")),
       info_staff: OpenStruct.new(host: ENV.fetch("PRIVATE_INFO_STAFF_URL", "info.org.localhost")),
+      edit_staff: OpenStruct.new(host: ENV.fetch("PUBLIC_EDIT_STAFF_URL", "edit.org.localhost")),
     }
   end
 end

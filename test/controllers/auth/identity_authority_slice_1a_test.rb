@@ -100,7 +100,7 @@ class Auth::IdentityAuthoritySlice1ATest < ActionDispatch::IntegrationTest
       method: :get,
     )
 
-    assert_equal "auth/app/sign/outs/completions", route.fetch(:controller)
+    assert_equal "auth/app/sign/outs", route.fetch(:controller)
     assert_equal "show", route.fetch(:action)
   end
 

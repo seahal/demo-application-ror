@@ -57,7 +57,8 @@ module Base
 
         def session_columns
           %i(device last_activity created expires_at status mode action).index_with do |column|
-            t("base.shared.identity.sessions.columns.#{column}")
+            key = "base.shared.identity.sessions.columns.#{column}"
+            t(key)
           end
         end
 
