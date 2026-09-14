@@ -28,6 +28,7 @@ class Base::App::AccountsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "account", inertia_props.fetch("body")
     assert_equal I18n.t("actions.up", locale: :ja), inertia_props.dig("up_link", "label")
     assert_equal base_app_root_path(ri: "jp"), inertia_props.dig("up_link", "href")
+    assert_equal "Create Account", inertia_props.dig("create_action", "label")
   end
 
   test "show resolves by public_id" do

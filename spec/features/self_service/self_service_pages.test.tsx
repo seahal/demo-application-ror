@@ -1,3 +1,4 @@
+import { getByRole, queryByRole } from "@testing-library/dom";
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -157,6 +158,40 @@ describe("EntityList", () => {
     expect(html).toContain("上へ");
     expect(upIndex).toBeGreaterThan(-1);
     expect(upIndex).toBeLessThan(titleIndex);
+  });
+
+  it("renders the server-provided create action as a disabled button without a destination", () => {
+    const actionContainer = document.createElement("div");
+    actionContainer.innerHTML = renderToStaticMarkup(
+      <EntityList
+        title="Accounts"
+        body="account"
+        empty="None available"
+        entries={[]}
+        create_action={{ label: "Create Account" }}
+      />,
+    );
+
+    const button = getByRole(actionContainer, "button", { name: "Create Account" });
+
+    expect(button.tagName).toBe("BUTTON");
+    expect(button.hasAttribute("disabled")).toBe(true);
+    expect(button.hasAttribute("href")).toBe(false);
+  });
+
+  it("does not render a create button when the server withheld the action", () => {
+    const emptyContainer = document.createElement("div");
+    emptyContainer.innerHTML = renderToStaticMarkup(
+      <EntityList
+        title="Accounts"
+        body="account"
+        empty="None available"
+        entries={[]}
+        create_action={null}
+      />,
+    );
+
+    expect(queryByRole(emptyContainer, "button", { name: "Create Account" })).toBeNull();
   });
 });
 

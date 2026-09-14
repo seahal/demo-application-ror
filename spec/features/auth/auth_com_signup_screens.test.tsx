@@ -89,6 +89,20 @@ describe("auth/com sign-up entry screens", () => {
     expect(markup).toContain("メールアドレスを入力してください");
   });
 
+  it("restores only the submitted address after a rejected registration", () => {
+    const enteredAddress = "Typed.Address+tag@example.com";
+    const markup = renderToStaticMarkup(
+      <ComSignUpEmailNew
+        {...emailProps}
+        field={{ ...emailProps.field, value: enteredAddress }}
+        error_heading="入力内容を確認してください"
+        errors={["規約に同意してください"]}
+      />,
+    );
+
+    expect(markup).toContain(`value="${enteredAddress}"`);
+  });
+
   it("draws the telephone form with the telephone field type", () => {
     const markup = renderToStaticMarkup(
       <ComSignUpTelephoneNew

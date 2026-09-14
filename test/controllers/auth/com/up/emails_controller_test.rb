@@ -42,6 +42,7 @@ class Auth::Com::Sign::Up::EmailsControllerTest < ActionDispatch::IntegrationTes
     assert_equal "render", inertia_props.fetch("turnstile").fetch("mode")
     assert_equal I18n.t("sign.com.registration.email.new.page_title"), inertia_props.fetch("title")
     assert_equal "visitor_email", inertia_props.fetch("scope")
+    assert_equal "", inertia_props.fetch("field").fetch("value")
     checkbox_names = inertia_props.fetch("checkboxes").map { |checkbox| checkbox.fetch("name") }
 
     assert_includes checkbox_names, "notifiable"
@@ -257,6 +258,7 @@ class Auth::Com::Sign::Up::EmailsControllerTest < ActionDispatch::IntegrationTes
          headers: default_headers
 
     assert_response :unprocessable_content
+    assert_equal "invalid-email", inertia_props.fetch("field").fetch("value")
     assert_not_includes inertia_props.fetch("errors").join(" "), "Visitorを入力してください"
   end
 
@@ -272,6 +274,7 @@ class Auth::Com::Sign::Up::EmailsControllerTest < ActionDispatch::IntegrationTes
          headers: default_headers
 
     assert_response :unprocessable_content
+    assert_equal "com-flow-step-2@example.com", inertia_props.fetch("field").fetch("value")
   end
 
   test "create with turnstile failure returns unprocessable content" do
@@ -285,6 +288,7 @@ class Auth::Com::Sign::Up::EmailsControllerTest < ActionDispatch::IntegrationTes
          headers: default_headers
 
     assert_response :unprocessable_content
+    assert_equal "turnstile@example.com", inertia_props.fetch("field").fetch("value")
   end
 
   test "create inside overwrite window returns too many requests" do

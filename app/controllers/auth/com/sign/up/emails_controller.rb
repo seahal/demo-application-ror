@@ -157,6 +157,7 @@ module Auth
                 label: VisitorEmail.human_attribute_name(:address),
                 type: "email",
                 autocomplete: "email",
+                value: sign_up_email_input_value,
               },
               checkboxes: [
                 {
@@ -218,6 +219,15 @@ module Auth
 
           def sign_up_email_errors
             @user_email&.errors&.map(&:full_message) || []
+          end
+
+          def sign_up_email_input_value
+            return "" unless request.post?
+
+            email_params = params.slice(:visitor_email).permit(visitor_email: %i(raw_address address))[:visitor_email]
+            value = email_params&.[](:raw_address)
+            value = email_params&.[](:address) unless value.is_a?(String)
+            value if value.is_a?(String)
           end
 
           # Mirrors the label `form.submit` looked up, so the button keeps its wording.

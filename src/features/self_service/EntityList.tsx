@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 
 // A self-service index listing. The server decides which entries exist and where each one links,
 // so the component only renders what the props already resolved.
+import Button from "@/components/ui/Button";
 import Page, { type PageUpLink } from "@/components/ui/Page";
 
 export type EntityListEntry = {
@@ -16,6 +17,7 @@ export type EntityListProps = {
   empty: string;
   entries: EntityListEntry[];
   up_link?: PageUpLink | null;
+  create_action?: { label: string } | null;
 };
 
 export default function EntityList({
@@ -24,6 +26,7 @@ export default function EntityList({
   empty,
   entries,
   up_link: upLink = null,
+  create_action: createAction = null,
 }: EntityListProps) {
   // The surface Inertia layout owns the <main> landmark, so the page renders a section only.
   return (
@@ -32,6 +35,16 @@ export default function EntityList({
       description={body}
       up={upLink}
       upVisit="inertia"
+      actions={
+        createAction ? (
+          <Button
+            isDisabled
+            type="button"
+          >
+            {createAction.label}
+          </Button>
+        ) : undefined
+      }
     >
       {entries.length === 0 ? (
         <p className="text-sm text-fg-muted">{empty}</p>
