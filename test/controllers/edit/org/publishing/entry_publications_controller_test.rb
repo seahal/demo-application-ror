@@ -109,8 +109,7 @@ class Edit::Org::Publishing::EntryPublicationsControllerTest < ActionDispatch::I
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "edit/org/publishing/docs/app/entries/show", inertia_component
-    assert_equal "must be a date and time", inertia_props.fetch("errors").fetch("effective_from")
+    assert_match "must be a date and time", response.body
     assert_equal 0, entry.reload.publications.count
   end
 
@@ -120,7 +119,7 @@ class Edit::Org::Publishing::EntryPublicationsControllerTest < ActionDispatch::I
     post edit_org_publishing_docs_app_entry_publications_path(entry.public_id), headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "entry has no current revision to publish", inertia_props.fetch("errors").fetch("base")
+    assert_match "entry has no current revision to publish", response.body
     assert_equal 0, entry.reload.publications.count
   end
 
@@ -133,7 +132,7 @@ class Edit::Org::Publishing::EntryPublicationsControllerTest < ActionDispatch::I
            headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "can't be blank", inertia_props.fetch("errors").fetch("reason")
+    assert_select "span[role=alert]", text: "can't be blank"
     assert_not_nil entry.reload.active_publication
   end
 
@@ -197,7 +196,7 @@ class Edit::Org::Publishing::EntryPublicationsControllerTest < ActionDispatch::I
            headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "publication has already ended", inertia_props.fetch("errors").fetch("base")
+    assert_match "publication has already ended", response.body
     assert_equal "first", publication.reload.termination_reason
   end
 

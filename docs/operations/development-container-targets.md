@@ -29,9 +29,11 @@ The repository keeps exactly two Compose files:
 
 - `compose.yaml` — the project-common definition, including the workspace bind mount, the loopback
   host publications, `userns_mode: keep-id`, and the build target knob.
-- `compose.override.yaml` — tracked and auto-discovered. It carries the opt-in `remote-access`
-  overlay behind a profile, and is where anything specific to one machine or one person goes: host
-  devices, personal tooling. Everything in it must be profile-gated.
+- `compose.override.yaml` — **untracked and gitignored since 2026-09-14**, auto-discovered. It
+  carries the opt-in `remote-access` overlay behind a profile, and is where anything specific to one
+  machine or one person goes: host devices, personal tooling. Being untracked is what keeps those
+  per-machine; previously the file shipped to every clone. Profile-gate anything that should stay
+  inert on a bare `podman compose up`.
 
 `.devcontainer/devcontainer.json` loads `compose.yaml` and `.devcontainer/compose.yaml`, in that
 order. Do not add a third root overlay.

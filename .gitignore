@@ -184,3 +184,17 @@ node_modules
 
 # Vitest Browser Mode / local attachments cache
 .vitest/
+
+# Local Compose overrides. Untracked as of 2026-09-14 so per-machine settings --
+# host device mounts, extra published ports, container runtime sockets -- stay on
+# the machine that needs them instead of shipping to every clone. Neither file is
+# required: `devcontainer.json` names its Compose files explicitly and includes
+# neither, and a bare `podman compose` simply skips an override that is absent.
+/compose.override.yaml
+/.devcontainer/compose.override.yml
+
+# Opt-in fakecloud Podman-socket overlay. Not auto-discovered -- it applies only
+# when passed with an explicit `-f` -- and never committed: it grants fakecloud
+# full container-management rights under the invoking user, and its
+# ${XDG_RUNTIME_DIR} path is UID-dependent.
+/compose.msk.yaml

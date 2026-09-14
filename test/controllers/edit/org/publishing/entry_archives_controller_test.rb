@@ -33,8 +33,7 @@ class Edit::Org::Publishing::EntryArchivesControllerTest < ActionDispatch::Integ
     post edit_org_publishing_docs_app_entry_archive_path(entry.public_id), headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "edit/org/publishing/docs/app/entries/show", inertia_component
-    assert_equal "can't be blank", inertia_props.fetch("errors").fetch("reason")
+    assert_select "span[role=alert]", text: "can't be blank"
     assert_not entry.reload.archived?
   end
 
@@ -50,10 +49,7 @@ class Edit::Org::Publishing::EntryArchivesControllerTest < ActionDispatch::Integ
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal(
-      "a published entry cannot be archived; end its publication first",
-      inertia_props.fetch("errors").fetch("base"),
-    )
+    assert_match "a published entry cannot be archived; end its publication first", response.body
     assert_not entry.reload.archived?
 
     publication = entry.active_publication
@@ -86,7 +82,7 @@ class Edit::Org::Publishing::EntryArchivesControllerTest < ActionDispatch::Integ
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "entry is already archived", inertia_props.fetch("errors").fetch("base")
+    assert_match "entry is already archived", response.body
     assert_equal "first", entry.reload.archive_reason
   end
 
@@ -115,7 +111,7 @@ class Edit::Org::Publishing::EntryArchivesControllerTest < ActionDispatch::Integ
     delete edit_org_publishing_docs_app_entry_archive_path(entry.public_id), headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "entry is not archived", inertia_props.fetch("errors").fetch("base")
+    assert_match "entry is not archived", response.body
   end
 
   test "archiving through another cell's controller is a 404" do

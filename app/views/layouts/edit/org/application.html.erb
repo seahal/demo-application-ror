@@ -12,7 +12,7 @@
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
   <meta property="csp-nonce" nonce="<%= content_security_policy_nonce %>">
-  <%= stylesheet_link_tag "application", nonce: true %>
+  <%= vite_stylesheet_tag "~/styles/surfaces/edit_org.css", nonce: true %>
   <%= javascript_importmap_tags %>
 </head>
 <body>

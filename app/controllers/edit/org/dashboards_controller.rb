@@ -4,8 +4,6 @@
 module Edit
   module Org
     class DashboardsController < Edit::Org::ApplicationController
-      include ::SurfaceInertiaPage
-
       AUTHENTICATION_MODE = :private
       declare_authentication_mode! :private
       before_action :authenticate_operator!
@@ -14,7 +12,7 @@ module Edit
 
       def show
         authorize!(current_operator, to: :show?)
-        render inertia: true, props: show_page_props
+        render locals: show_page_props
       end
 
       private

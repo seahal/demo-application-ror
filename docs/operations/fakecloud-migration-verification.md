@@ -96,9 +96,11 @@ Static checks only, all run inside `core`:
 
 ## Part 3 — What Was Never Run
 
-`podman`, `docker`, and `aws` are absent from the `core` image. `terraform` is present since
-2026-08-31 via `ghcr.io/devcontainers/features/terraform`, but was not exercised, so **no runtime
-verification of any kind was performed.** Two things in particular have never executed even once:
+`podman`, `docker`, and `aws` are absent from the `core` image. `terraform` was claimed present
+since 2026-08-31 via `ghcr.io/devcontainers/features/terraform`, but the feature was not actually
+added until 2026-09-14; it was absent for that whole period. It has still not been exercised, so
+**no runtime verification of any kind was performed.** Two things in particular have never executed
+even once:
 
 - **The healthcheck.** fakecloud's own documentation publishes a `curl`-based probe, but the image
   is Debian bookworm carrying only `ca-certificates nftables kmod procps` — no `curl`, no `wget`.

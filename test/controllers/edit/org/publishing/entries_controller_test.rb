@@ -15,30 +15,27 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
   test "index lists only the cell across locales" do
     ja_entry = publishing_draft(audience: "app", surface: "docs", slug: "ja-guide", title: "JA Guide")
     en_entry = publishing_draft(audience: "app", surface: "docs", slug: "en-guide", title: "EN Guide", locale: "en")
-    other_audience = publishing_draft(audience: "com", surface: "docs", slug: "com-guide", title: "COM Guide")
-    other_surface = publishing_draft(audience: "app", surface: "news", slug: "news-guide", title: "News Guide")
+    publishing_draft(audience: "com", surface: "docs", slug: "com-guide", title: "COM Guide")
+    publishing_draft(audience: "app", surface: "news", slug: "news-guide", title: "News Guide")
 
     get edit_org_publishing_docs_app_entries_path(ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    assert_equal "edit/org/publishing/docs/app/entries/index", inertia_component
-    public_ids = inertia_props.fetch("entries").map { |row| row.fetch("public_id") }
-
-    assert_includes public_ids, ja_entry.public_id
-    assert_includes public_ids, en_entry.public_id
-    assert_not_includes public_ids, other_audience.public_id
-    assert_not_includes public_ids, other_surface.public_id
-    locales = inertia_props.fetch("entries").map { |row| row.fetch("locale") }
-
-    assert_includes locales, "ja"
-    assert_includes locales, "en"
+    assert_match ja_entry.current_revision.title, response.body
+    assert_match en_entry.current_revision.title, response.body
+    assert_no_match(/COM Guide/, response.body)
+    assert_no_match(/News Guide/, response.body)
+    assert_select "td", text: "ja"
+    assert_select "td", text: "en"
   end
 
   test "empty index renders" do
     get edit_org_publishing_help_org_entries_path(ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    assert_equal [], inertia_props.fetch("entries")
+    # rubocop:disable I18n/RailsI18n/DecorateString -- asserting on inline staff-only copy, not user-facing i18n text
+    assert_match "No entries in this cell.", response.body
+    # rubocop:enable I18n/RailsI18n/DecorateString
   end
 
   test "show renders the cell entry and 404s for other cells or unknown ids" do
@@ -48,14 +45,10 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
     get edit_org_publishing_docs_app_entry_path(entry.public_id, ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    assert_equal "edit/org/publishing/docs/app/entries/show", inertia_component
-    shown = inertia_props.fetch("entry")
-
-    assert_equal entry.public_id, shown.fetch("public_id")
-    assert_equal "docs", shown.fetch("surface")
-    assert_equal "app", shown.fetch("audience")
-    assert_equal "Shown", shown.fetch("title")
-    assert_not shown.key?("id")
+    assert_match entry.public_id, response.body
+    assert_select "dd", text: "docs"
+    assert_select "dd", text: "app"
+    assert_match "Shown", response.body
 
     get edit_org_publishing_docs_app_entry_path(foreign.public_id, ri: "jp"), headers: @staff_headers
 
@@ -77,12 +70,10 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
     get edit_edit_org_publishing_docs_app_entry_path(entry.public_id, ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    form = inertia_props.fetch("form")
-
-    assert_equal "Editable", form.fetch("title")
-    assert_includes form.fetch("body"), "Editable body"
-    assert_equal "patch", form.fetch("method")
-    assert_equal edit_org_publishing_docs_app_entry_path(entry.public_id, ri: "jp"), form.fetch("action")
+    assert_select "input[name='entry[title]'][value=?]", "Editable"
+    assert_match "Editable body", response.body
+    assert_select "form[action=?]", edit_org_publishing_docs_app_entry_path(entry.public_id, ri: "jp")
+    assert_select "input[name='_method'][value='patch']"
 
     get edit_edit_org_publishing_docs_app_entry_path(foreign.public_id, ri: "jp"), headers: @staff_headers
 
@@ -141,8 +132,7 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
           headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "edit/org/publishing/docs/app/entries/edit", inertia_component
-    assert_equal "must be valid JSON", inertia_props.fetch("errors").fetch("body")
+    assert_match "must be valid JSON", response.body
     assert_equal current, entry.reload.current_revision
     assert_equal 1, entry.revisions.count
   end
@@ -198,8 +188,7 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
           headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "edit/org/publishing/docs/app/entries/edit", inertia_component
-    assert_equal "is stale", inertia_props.fetch("errors").fetch("lock_version")
+    assert_match "is stale", response.body
     assert_equal first_revision, entry.reload.current_revision
     assert_equal 2, entry.revisions.count
   end
@@ -263,13 +252,10 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
     get new_edit_org_publishing_docs_app_entry_path(ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    assert_equal "edit/org/publishing/docs/app/entries/new", inertia_component
-    form = inertia_props.fetch("form")
-
-    assert_equal "post", form.fetch("method")
-    assert_equal edit_org_publishing_docs_app_entries_path(ri: "jp"), form.fetch("action")
-    assert_nil form.fetch("title")
-    assert_equal %w(en ja), inertia_props.fetch("locales").sort
+    assert_select "form[action=?]", edit_org_publishing_docs_app_entries_path(ri: "jp")
+    assert_select "input[name='_method']", false
+    assert_select "input[name='entry[title]']"
+    assert_select "select[name='entry[locale]'] option", count: 2
   end
 
   test "create makes the entry, its canonical slug, and revision 1 in the cell that was posted to" do
@@ -314,8 +300,7 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "edit/org/publishing/docs/app/entries/new", inertia_component
-    assert_equal "is already used by another entry in this locale", inertia_props.fetch("errors").fetch("slug")
+    assert_match "is already used by another entry in this locale", response.body
     assert_equal 1, Publishing::Docs::App::Entry.where(locale: "ja").count
   end
 
@@ -333,7 +318,7 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "must be lowercase letters, digits, and hyphens", inertia_props.fetch("errors").fetch("slug")
+    assert_match "must be lowercase letters, digits, and hyphens", response.body
     assert_equal 0, Publishing::Docs::App::Entry.count
   end
 
@@ -351,7 +336,7 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
          headers: @staff_headers
 
     assert_response :unprocessable_content
-    assert_equal "must be one of en, ja", inertia_props.fetch("errors").fetch("locale")
+    assert_match "must be one of en, ja", response.body
     assert_equal 0, Publishing::Docs::App::Entry.count
   end
 
@@ -363,18 +348,17 @@ class Edit::Org::Publishing::EntriesControllerTest < ActionDispatch::Integration
     get edit_org_publishing_docs_app_entries_path(ri: "jp"), headers: @staff_headers
 
     assert_response :success
-    assert_equal 25, inertia_props.fetch("entries").length
-    first_page = inertia_props.fetch("page")
+    assert_select "table tbody tr", count: 25
+    assert_match "27 entries", response.body
+    assert_match "page 1", response.body
+    assert_select "nav a", text: "Previous", count: 0
 
-    assert_equal 27, first_page.fetch("total")
-    assert_equal 1, first_page.fetch("number")
-    assert_nil first_page.fetch("previous_href")
-
-    get first_page.fetch("next_href"), headers: @staff_headers
+    next_href = css_select("nav a").find { |node| node.text == "Next" }.attribute("href").value
+    get next_href, headers: @staff_headers
 
     assert_response :success
-    assert_equal 2, inertia_props.fetch("entries").length
-    assert_nil inertia_props.fetch("page").fetch("next_href")
+    assert_select "table tbody tr", count: 2
+    assert_select "nav a", text: "Next", count: 0
   end
 
   test "a page that is not a number is a bad request rather than page one" do

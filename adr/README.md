@@ -193,6 +193,28 @@ Current logging / observability decisions:
   observability events, with CSP violation reports as the first in-process subscriber use.
 - `adr/traces-and-metrics-routing-via-alloy.md`
 
+Current infrastructure / environment decisions:
+
+- `adr/staging-aurora-postgresql-topology.md` — Amazon Aurora PostgreSQL is the direction for
+  production, reached by way of staging. Whenever Aurora is the backend it is one cluster with two
+  DB instances (writer 1 + reader 1, never zero readers) hosting all 20 logical databases behind the
+  cluster and reader endpoints. Production stays on Neon until staging runs. **Staging's own
+  database backend is deferred** — FakeCloud emulates no RDS or Aurora, so it is chosen when staging
+  implementation begins. PostgreSQL major version alignment is deferred; `pg_cron` is kept as an
+  unused local PoC and is deliberately not wired into `config/database.yml`.
+- `adr/fakecloud-podman-staging-environment.md` — staging is a Podman-hosted FakeCloud environment
+  provisioned with Terraform (not OpenTofu, not an AWS account); environment-agnostic
+  `terraform/modules/` with all emulator specifics in `terraform/environments/<env>/`; staging owns
+  bucket names distinct from local development; `DEPLOYMENT_TIER=staging` runs production Rails
+  configuration against the emulator while `production` keeps the AWS credential chain. The unit of
+  deployment is the OCI container run by Podman with no host-OS assumption (the RHEL-host intent is
+  dropped; Kubernetes is left open but not adopted). The no-real-AWS scope covers object storage and
+  streaming only: the relational database is outside FakeCloud's coverage and is deferred, while
+  Valkey stays a plain container and needs no alternative. Outbound email (SES over SMTP) and SMS
+  (SNS, whose client accepts no custom endpoint) keep using real AWS, making SMS the second
+  real-AWS exception after the database. Records that no Terraform command has yet
+  been run against any environment.
+
 Current health / edge access decisions:
 
 - `adr/internal-health-endpoint-edge-isolation.md` — `/health` and every path beneath it are

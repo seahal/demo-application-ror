@@ -162,11 +162,13 @@ databases and re-clone the replica afterwards.
 
 ```text
 compose.yaml                        = shared infrastructure and host-native publications
-compose.override.yaml               = tracked; auto-discovered; everything in it profile-gated
-                                      (the opt-in `remote-access` sshd overlay of `core`, plus
-                                      any per-machine settings you add locally)
+compose.override.yaml               = UNTRACKED + gitignored (2026-09-14); auto-discovered;
+                                      the opt-in `remote-access` sshd overlay of `core`, plus
+                                      any per-machine settings you add locally
 .devcontainer/compose.yaml          = tracked; the Dev Container's core service overlay
-.devcontainer/compose.override.yml  = tracked compatibility container-name overlay
+.devcontainer/compose.override.yml  = UNTRACKED + gitignored (2026-09-14); a compatibility
+                                      container-name overlay that only restates values
+                                      compose.yaml already sets
 ```
 
 A fresh clone needs **no local file**:

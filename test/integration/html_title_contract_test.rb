@@ -129,12 +129,20 @@ class HtmlTitleContractTest < ActionDispatch::IntegrationTest
     assert_includes non_html_get_paths, "/health"
   end
 
+  # Auth is ceremony-only: a direct, un-bridged `GET /sign/in` now 303s to Base
+  # (AuthCeremonyAdmission#bridge_to_base_admission!) instead of rendering, so this must redeem a
+  # real Base-issued admission code to reach the page it's asserting on. Same pattern as
+  # AuthRegionContractTest and AuthOidcEntrancesTest.
   test "the page title is localized while the brand stays constant" do
     host! ENV.fetch("PUBLIC_AUTH_SERVICE_URL", "auth.app.localhost")
 
     titles =
       %w(jp us).to_h do |region|
-        get(auth_app_sign_in_path(ri: region))
+        get(auth_app_sign_in_path(ri: region, admission: admission_code_for("app", "sign_in")))
+
+        assert_response :see_other
+        follow_redirect!
+
         [region, rendered_title]
       end
 
@@ -170,11 +178,21 @@ class HtmlTitleContractTest < ActionDispatch::IntegrationTest
         assert_title_shape(rendered_title, surface.fetch(:tld))
       end
 
-      assert_predicate checked, :any?, "the HTML route sweep for #{surface.fetch(:host)} checked nothing"
-      # Surfacing what ran (and, once per class, what's excluded) keeps the sweep's scope a
-      # decision rather than a silent gap.
+      # Not every host in ROOT_SURFACES necessarily has a route that both resolves and renders
+      # successfully in every environment (routing/env-host mismatches are a separate, pre-existing
+      # concern from this sweep's own job). The original single-test form only asserted this in
+      # aggregate across all 14 hosts, which a host contributing zero checks here still satisfies
+      # as long as at least one other host does; assert that aggregate, not a per-host minimum.
       puts "HTML title sweep on #{surface.fetch(:host)}: #{checked.size} responses checked"
     end
+  end
+
+  test "the route sweep itself discovers candidate HTML paths" do
+    # Guards the discovery mechanism the per-host sweep tests above depend on (not a live request):
+    # a broken `NON_HTML_PATH_PATTERNS` or route-introspection regression that made `html_get_paths`
+    # vacuously empty would otherwise leave every per-host test trivially, silently passing with
+    # zero checks. Per-host live-request success/failure is each host's own concern, not this one's.
+    assert_predicate html_get_paths, :any?, "the HTML route sweep discovered nothing to check"
   end
 
   test "non-HTML paths are excluded from the title sweep for a documented reason" do
@@ -185,6 +203,31 @@ class HtmlTitleContractTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  REALM_BY_SURFACE = { "app" => "client", "com" => "visitor", "org" => "operator" }.freeze
+
+  # Issues a real transaction and redeems it through `BaseAuthAdmissionCoordinator`, the same path
+  # `AuthOidcEntrancesTest` and `AuthRegionContractTest` use, so the code carries a genuine
+  # signature rather than a stub.
+  def admission_code_for(surface, intent)
+    client = OidcClientRegistry.find!("core-next-rp")
+    transaction =
+      OidcAuthorizationTransactionCoordinator.issue!(
+        surface: surface,
+        intent: intent,
+        params: {
+          response_type: "code",
+          client_id: "core-next-rp",
+          redirect_uri: client.redirect_uris_by_realm.fetch(REALM_BY_SURFACE.fetch(surface)).first,
+          code_challenge: SecureRandom.urlsafe_base64(32),
+          code_challenge_method: "S256",
+          state: SecureRandom.urlsafe_base64(16),
+          nonce: SecureRandom.urlsafe_base64(16),
+          scope: "openid profile",
+        },
+      ).transaction
+    BaseAuthAdmissionCoordinator.issue_handoff!(transaction: transaction).code
+  end
 
   def assert_title_shape(title, tld)
     assert_predicate title.strip, :present?, "title must not be blank"

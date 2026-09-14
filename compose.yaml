@@ -7,14 +7,22 @@
 # The file layout:
 #
 #   compose.yaml                  — infrastructure services and loopback host ports.
-#   compose.override.yaml         — TRACKED. The only other root Compose file. It
-#                                   carries the opt-in `remote-access` overlay of
-#                                   `core` and is where per-machine settings go.
+#   compose.override.yaml         — UNTRACKED since 2026-09-14, and gitignored. The
+#                                   only other root Compose file. It carries the
+#                                   opt-in `remote-access` overlay of `core` and is
+#                                   where per-machine settings go; untracking it is
+#                                   what keeps those per-machine.
 #   .devcontainer/compose.yaml    — the Dev Container `core` application service.
 #   .devcontainer/compose.override.yml
-#                                 — TRACKED. The Dev Container's own overlay
-#                                   (container names, SELinux labels, ports). Part
-#                                   of the standard environment, not a local file.
+#                                 — UNTRACKED since 2026-09-14, and gitignored. A
+#                                   19-line compatibility overlay for callers that
+#                                   load it explicitly; it only restates
+#                                   `container_name` values this file already sets,
+#                                   so nothing depends on it.
+#
+# Neither override is required. `devcontainer.json` names its Compose files
+# explicitly and includes neither, and a bare `podman compose` skips an override
+# that is absent. A fresh clone has neither file and works.
 #
 # `.devcontainer/devcontainer.json` loads `compose.yaml` and
 # `.devcontainer/compose.yaml`, in that order. The Dev Containers CLI passes each
