@@ -70,6 +70,8 @@ require_relative "support/form_action_policy_helper"
 require_relative "support/fetch_metadata_defaults"
 require_relative "support/turnstile_verifier_stub"
 require_relative "support/outbound_http_stub"
+require_relative "support/service_stubs"
+require_relative "support/valkey_test_isolation"
 require_relative "support/login_cooldown_helper"
 require_relative "support/inertia_page_object"
 require_relative "support/org_entra_first_stage_helper"
@@ -298,6 +300,7 @@ module ActiveSupport
     raise ArgumentError, "PARALLEL_WORKERS must be positive" unless parallel_workers.positive?
 
     fixtures :all
+    ValkeyTestIsolation.install!
     ParallelTestDatabaseCloner.install!(workers: parallel_workers)
     parallelize(workers: parallel_workers, parallelize_databases: false)
 

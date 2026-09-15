@@ -100,7 +100,8 @@ Current API design decisions:
   permitted), and OpenAPI 3.2.x. Records the areas where no standard exists, keeping
   `docs/reference/api-design-standards.md` limited to specification-backed rules.
 - `adr/api-route-vocabulary-consolidation.md` — accepted naming direction consolidating `/web/v0`
-  and `/edge/v0` under `/api/v0`. Direction only; no route was changed.
+  and `/edge/v0` under `/api/v0`; its 2026-09-15 amendment records the reviewed Core preference
+  API migration, while the remaining services stay subject to endpoint-specific review.
 
 Current database naming decisions:
 

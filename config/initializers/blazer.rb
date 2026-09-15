@@ -6,8 +6,8 @@
 # here stays behind the same development guard.
 if Rails.env.development?
   # Blazer persists a query-audit row on every run by default (Blazer.audit), which needs a
-  # `blazer_audits` table this repository has no migration for. Disabling it here keeps this
-  # dashboard a read-only add: no new table, no new migration to review.
+  # `blazer_audits` table. Auditing is off here, so db/migrate/20260915000000_create_blazer_tables.rb
+  # omits that table and creates only the storage the dashboard itself reads.
   Blazer.audit = false
 
   # Cloudflare Access fronts blazer.umaxica.dev, but the mounted engine must not depend on the

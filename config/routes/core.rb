@@ -38,11 +38,13 @@ scope module: :core, as: :core do
       namespace :api do
         namespace :v0 do
           namespace :preferences do
-            get :cookie, to: "/core/app/web/v0/cookies#show"
-            patch :cookie, to: "/core/app/web/v0/cookies#update"
-            get :theme, to: "/core/app/web/v0/themes#show"
-            patch :theme, to: "/core/app/web/v0/themes#update"
-            resource :dbsc, only: :create, controller: "/core/app/edge/v0/dbsc"
+            # These preference resources intentionally expose GET + PATCH only. Rails' `resource
+            # ... only: :update` also exposes PUT, which is outside the existing OpenAPI contract.
+            get :cookie, to: "cookies#show"
+            patch :cookie, to: "cookies#update"
+            get :theme, to: "themes#show"
+            patch :theme, to: "themes#update"
+            resource :dbsc, only: :create
           end
 
           # Machine-readable health and revision. The literal ".json" is part of the path, not a
@@ -118,11 +120,12 @@ scope module: :core, as: :core do
       namespace :api do
         namespace :v0 do
           namespace :preferences do
-            get :cookie, to: "/core/com/web/v0/cookies#show"
-            patch :cookie, to: "/core/com/web/v0/cookies#update"
-            get :theme, to: "/core/com/web/v0/themes#show"
-            patch :theme, to: "/core/com/web/v0/themes#update"
-            resource :dbsc, only: :create, controller: "/core/com/edge/v0/dbsc"
+            # Keep the established GET + PATCH contract; resource update would add an unapproved PUT.
+            get :cookie, to: "cookies#show"
+            patch :cookie, to: "cookies#update"
+            get :theme, to: "themes#show"
+            patch :theme, to: "themes#update"
+            resource :dbsc, only: :create
           end
 
           # Machine-readable health and revision. The literal ".json" is part of the path, not a
@@ -198,11 +201,12 @@ scope module: :core, as: :core do
       namespace :api do
         namespace :v0 do
           namespace :preferences do
-            get :cookie, to: "/core/org/web/v0/cookies#show"
-            patch :cookie, to: "/core/org/web/v0/cookies#update"
-            get :theme, to: "/core/org/web/v0/themes#show"
-            patch :theme, to: "/core/org/web/v0/themes#update"
-            resource :dbsc, only: :create, controller: "/core/org/edge/v0/dbsc"
+            # Keep the established GET + PATCH contract; resource update would add an unapproved PUT.
+            get :cookie, to: "cookies#show"
+            patch :cookie, to: "cookies#update"
+            get :theme, to: "themes#show"
+            patch :theme, to: "themes#update"
+            resource :dbsc, only: :create
           end
 
           # Machine-readable health and revision. The literal ".json" is part of the path, not a

@@ -199,7 +199,10 @@ module Valkey
       private
 
       def default_connection
-        Umaxica::Valkey::Connection.new(namespace: Umaxica::Valkey::Namespaces::AUTHORIZATION_CODES)
+        namespace = Umaxica::Valkey::Namespaces.authorization_codes(
+          **Umaxica::Valkey::Namespaces.runtime_scope,
+        )
+        Umaxica::Valkey::Connection.new(namespace: namespace)
       end
 
       def normalize_expected(expected)

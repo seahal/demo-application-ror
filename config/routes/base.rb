@@ -112,6 +112,10 @@ scope(module: :base, as: :base) do
       end
 
       # Public web API: cookie consent, theme.
+      # FIXME: Keep these Base-owned browser preference endpoints under `/web/v0` until a
+      # compatibility review identifies every chrome caller and assigns an OpenAPI/authority owner
+      # for the replacement `/api/v0` surface. The current browser callers still construct these
+      # paths directly.
       namespace :web do
         namespace :v0 do
           resource :theme, only: %i(show update)
@@ -119,7 +123,10 @@ scope(module: :base, as: :base) do
         end
       end
 
-      # Edge compatibility API: token lifecycle management.
+      # Edge compatibility API: token lifecycle management. These are Base authority and DBSC
+      # protocol paths, so they require a client/authority review before any `/api/v0` migration.
+      # FIXME: Do not migrate this protocol surface by namespace renaming alone; decide the
+      # replacement contract and client compatibility first.
       namespace :edge do
         namespace :v0 do
           resource :cookie, only: %i(show update)

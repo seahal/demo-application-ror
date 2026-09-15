@@ -2,7 +2,8 @@
 
 Revision: 2026-09-15 (continuation update)
 Repository: seahal/umaxica-apps-jit-global
-Branch / HEAD: feature / 430ac354ba06c9d22885e1e69d027a7a1b1d5280
+Branch / HEAD: feature / 7bee4819ffe2a402c63a04af2a368bfcaf253c0d
+Worktree: intentionally dirty (34 tracked/untracked path entries at the latest checkpoint)
 Scope: the original V2 run was a planning-only evidence re-audit and plan reconstruction. A later user instruction continued local work; this file now records that continuation separately from the still-unapproved all-95 execution. No Git state or remote write is permitted.
 
 ## 1. Executive verdict
@@ -555,7 +556,7 @@ Status: READY_WITH_PRECONDITIONS for static and read-only runtime route inventor
 - Stop/recovery: keep uncertain endpoint functioning and annotate precise dependency; do not treat indefinite FIXME as OpenAPI completion.
 
 ### Phase E9 — Session/activity presentation, temporal semantics and bounded cleanup
-Status: READY_WITH_PRECONDITIONS after green comparable baseline; schema changes need event/expiry semantics and migration evidence.
+Status: **ALREADY_SATISFIED for the inspected presentation/absolute-expiry contract; READY_WITH_PRECONDITIONS for DB-backed runtime validation and any broader private-test cleanup**. Schema changes still need event/expiry semantics and migration evidence.
 
 - Objective / requirements: separate persistence metadata from domain time, make activity/session views user-safe, enforce owner-only session management and absolute expiry, apply preference time formatting, then reduce direct private-method tests without coverage loss; REQ-045–050, 075–084, 020.
 - Preconditions: E0 comparable green Rails baseline; inspect schema/history and Client/Visitor/Operator plus app/com/org and DBSC paths; establish discarded_at semantics before relying on it.
@@ -1780,11 +1781,14 @@ run.
    digests are not present in the repository or reachable Git blobs. Their summaries cannot be
    treated as the missing authoritative text, so the complete requirement ledger cannot be
    proven source-complete.
-2. The configured PostgreSQL host `primary` and Valkey host `valkey` are unavailable in this
-   environment. Rails test commands stop during test-schema boot before assertions. No isolated
-   test database, Valkey namespace, provider egress stubs, browser, or device validation has been
-   established. Consequently no database-backed authentication, replay, cookie, migration,
-   request-contract, DPoP, or DBSC claim is counted as runtime-validated.
+2. An earlier sandbox checkpoint could not resolve the configured PostgreSQL host `primary` or
+   Valkey host `valkey`, so those commands stopped before assertions. A later host-authorized run
+   did reach the test database, but the complete Rails suite was not green:
+   `12992 runs, 78670 assertions, 4 failures, 15 errors, 3 skips` (exit 1). The user's separate
+   terminal run also stopped via `^C` before a completion summary. No isolated Valkey namespace,
+   provider egress stubs, browser, or device validation has been established. Consequently no
+   database-backed authentication, replay, cookie, migration, request-contract, DPoP, or DBSC
+   claim is counted as fully runtime-validated.
 3. OIDC `prompt`/`max_age` handling, direct-entry UX, the final Auth/Base admission boundary,
    the public `guid`/`net` OpenAPI ownership decision, and physical DPoP/DBSC interoperability
    still require evidence or an explicit architectural decision. They must not be silently
@@ -1826,6 +1830,25 @@ append actual command results to this file, and run only isolated, non-destructi
 prerequisites are proven. Any architectural or security-boundary change discovered during
 implementation must be reported as `PLAN_DEVIATION` with the original assumption, evidence,
 affected requirements, and proposed alternative before proceeding.
+
+### Latest Rails test evidence — 2026-09-15
+
+The command entered by the user was:
+
+```text
+bin/rails test
+```
+
+It discovered `12992` tests and started `16` workers, then was interrupted with `^C`. Because it
+did not print a completion summary and did not exit normally, it is evidence that boot, discovery,
+and at least part of test execution worked; it is not evidence of a green suite.
+
+A host-authorized, non-destructive run completed separately with the same command and returned
+exit `1`: `12992 runs, 78670 assertions, 4 failures, 15 errors, 3 skips`. The model-only command
+`bin/rails test test/models` returned exit `0` with `3001 runs, 10214 assertions, 0 failures,
+0 errors, 0 skips`. The full suite therefore remains red and the measured green baseline has not
+been established. The concrete failure list and targeted rerun are recorded in the subsequent
+checkpoint; no assertion was weakened or skipped to improve the result.
 
 ### Authorized continuation checkpoint — reject future OIDC authentication time — 2026-09-15
 
@@ -1921,3 +1944,282 @@ It exited with status 1 during `ActiveRecord::Migration.maintain_test_schema!` w
 `PG::ConnectionBad: could not translate host name "primary" to address`; zero test assertions
 were executed. This is recorded as an environment block, not as a test failure or a passing
 result.
+
+### Current repository checkpoint — 2026-09-15 continuation
+
+The current repository state was re-read after the preceding checkpoint. `feature` is at
+`7bee4819ffe2a402c63a04af2a368bfcaf253c0d`, whose parent is
+`430ac354ba06c9d22885e1e69d027a7a1b1d5280`; the worktree has no staged, unstaged, or untracked
+paths at this observation. This supersedes the earlier provisional HEAD value in the historical
+planning snapshot; that earlier section is retained as history rather than silently rewritten.
+No checkout, reset, clean, stash, stage, commit, push, database operation, Valkey operation, or
+external provider call was performed during this re-read.
+
+### E8 bounded implementation slice — Core preference API controller vocabulary — 2026-09-15
+
+The evidence-supported part of E8 was implemented locally after the preceding checkpoint. Core
+app/com/org preference cookie and theme routes still expose the same `/api/v0/preferences/*` paths,
+but now resolve through `Core::<surface>::Api::V0::Preferences::CookiesController` and
+`ThemesController`. The DBSC registration route remains `POST /api/v0/preferences/dbsc` and now
+resolves through the matching canonical `DbscController`. The old Core `Web::V0` and `Edge::V0`
+controller files, plus their dead unmounted cookie coverage test, were removed after repository
+search found no remaining application caller.
+
+The existing GET/PATCH contract was deliberately preserved. Rails' ordinary `resource ... only:
+:update` also exposes PUT, while the OpenAPI and route contract explicitly reject PUT for cookie and
+theme updates. The route file therefore keeps a narrowly documented GET/PATCH declaration; this is
+an established API-contract exception, not a new route vocabulary. DBSC uses ordinary resource
+routing because its protocol contract is POST-only.
+
+Updated contract and invariant tests follow the canonical controller paths, and the accepted API
+vocabulary ADR now records this implementation amendment. `RUBY_DEBUG_LAZY=1 bin/rails routes`, the
+canonical controller constant load, syntax checks, targeted RuboCop, `git diff --check`,
+`bun run openapi:lint`, and `bin/rails notes` passed. Rails request/invariant tests remain
+unexecuted because the isolated test PostgreSQL host `primary` cannot be resolved; no database or
+Valkey service was started. The full E0–E10 program therefore remains `NO_GO` pending its existing
+environment and architecture gates.
+
+The subsequent full `bundle exec rubocop` inspection covered 4,786 files and exited 0 with no
+offenses.
+
+`bun run openapi:verify` also exited 0: source bundling succeeded and the three committed public
+bundles had no generated diff.
+
+A read-only `RUBY_DEBUG_LAZY=1 bin/rails runner '...'` check also recognized app/com/org GET and
+PATCH cookie/theme requests and DBSC POST requests, while confirming that the contractually
+unsupported cookie/theme PUT requests still raise `ActionController::RoutingError`.
+
+The remaining Base/Side browser preference routes and Base token/DBSC routes were not renamed by
+guesswork. Their route comments now contain actionable `FIXME:` notes describing the direct browser
+callers, authority/protocol boundary, and compatibility/OpenAPI decisions still required before a
+future `/api/v0` migration. Auth ceremony routes, content reads, and other protocol paths remain
+outside this slice.
+
+At this continuation point the worktree intentionally contains the route migration, test updates,
+ADR amendment, evidence record, and this plan append. No checkout, reset, clean, stash, stage,
+commit, push, database operation, Valkey operation, or external provider call was performed.
+
+### User-requested NO_GO plan pointer — 2026-09-15
+
+The current execution verdict for the complete feature program is **`NO_GO`**. The authoritative
+decision is recorded above under **“Current execution decision — NO_GO — 2026-09-15”**. This is a
+planning gate, not a claim that every bounded local slice is unimplemented.
+
+The complete E0–E10 / REQ-001–REQ-095 run remains blocked because the exact P00–P17 source
+artifacts are unavailable, the isolated PostgreSQL/Valkey test targets are unavailable, and the
+direct-entry UX, OIDC `prompt`/`max_age`, `guid`/`net` OpenAPI ownership, and physical DPoP/DBSC
+validation decisions remain unresolved or unverified. Rails request tests therefore must not be
+reported as green; the attempted runs stopped before assertions when the PostgreSQL host
+`primary` could not be resolved.
+
+The currently permitted work is limited to evidence-based static inspection and explicitly bounded,
+non-destructive slices whose dependencies are proven. Any later implementation run must first
+close the listed environment and decision gates, capture a measured green baseline, and then
+execute the frozen phase plan with public-behavior/security tests. No implicit approval to start
+the complete implementation is granted by the bounded changes already recorded in this file.
+
+### Documentation consistency follow-up — Core route amendment — 2026-09-15
+
+The Core preference route slice left two stale ADR statements implying that the vocabulary decision
+had never changed a route. `adr/README.md` now points to the reviewed Core amendment, and the
+opening/consequence language in `adr/api-route-vocabulary-consolidation.md` distinguishes the
+original naming decision from the implemented Core slice and the still-unmigrated services. This
+is documentation-only reconciliation; it does not broaden the route migration or change any
+remaining `/web/v0`/`/edge/v0` contract.
+
+Verification: `git diff --check` exited 0 and the affected Ruby source remains syntactically valid.
+
+### E8 GUID/OpenAPI boundary annotation — 2026-09-15
+
+The GUID route inventory confirms `GET /api/v0/resources/:guid` is owned by
+`guid/net/api/v0/resources#show`, while the current controller only performs transport-safe input
+checking and returns a controlled 404. No durable resolver model or issuance contract is evidenced,
+and the repository has no `net` OpenAPI bundle. `config/routes/guid.rb` now carries an actionable
+`FIXME:` beside the route naming those three blockers and explicitly forbidding a guessed schema or
+model. `RUBY_DEBUG_LAZY=1 bin/rails notes` finds it, and route output also confirms Edit's
+`/api/v0/health.json` and `/api/v0/revision.json` remain mounted under `edit/org` and are covered by
+the existing org-surface operational contract. No GUID persistence or OpenAPI ownership decision was
+made in this slice.
+
+The OpenAPI route coverage harness now includes `edit` in its application-service controller
+discovery pattern. This closes a real discovery gap for Edit's org-facing `/api/v0` operational
+routes without creating a new OpenAPI surface. GUID remains excluded from the three committed
+surface documents and is guarded by the route-level FIXME until the `net` ownership decision is
+made. `bundle exec rubocop test/contracts/openapi_route_coverage_test.rb config/routes/guid.rb`,
+Ruby syntax checks, `RUBY_DEBUG_LAZY=1 bin/rails routes`, and `git diff --check` passed. The
+database-backed OpenAPI Minitest remains unexecuted because Rails test boot cannot resolve
+PostgreSQL host `primary`.
+
+The attempted command was `RUBY_DEBUG_LAZY=1 bin/rails test test/contracts/openapi_route_coverage_test.rb`;
+it exited 1 during `ActiveRecord::Migration.maintain_test_schema!` with
+`PG::ConnectionBad: could not translate host name "primary" to address`. No OpenAPI coverage
+assertion executed, so the `edit` discovery change is static/runtime-route verified but not
+database-backed test verified.
+
+A read-only `RUBY_DEBUG_LAZY=1 bin/rails runner` inventory printed the expected `edit/org` health
+and revision operations plus the three GUID `net` operations (resource, health, revision). The
+runner loaded routes without performing database writes; its OpenTelemetry boot messages were
+informational only. This supports the scoped discovery change and the separate GUID ownership
+blocker, but it is not an OpenAPI schema or request-response validation.
+
+The coverage contract now has an explicit Edit-org assertion for exactly the health and revision
+operations and verifies that both are present in the existing org description. The focused Ruby
+syntax, RuboCop, and diff checks pass; the contract test itself remains blocked before assertions
+by the unavailable `primary` PostgreSQL host.
+
+The current authoritative worktree recheck remains `feature` at
+`7bee4819ffe2a402c63a04af2a368bfcaf253c0d`, with the Core route migration, its tests/evidence,
+the GUID FIXME, the OpenAPI discovery change, and this plan documentation uncommitted. Existing
+user changes were preserved; no staging, commit, reset, cleanup, database operation, Valkey
+operation, or remote write was performed.
+
+### Documentation consistency follow-up — preference contract — 2026-09-15
+
+The Core preference migration also made one active architecture document stale: it said cookie and
+theme JSON endpoints remained under `/web/v0` on every surface. The current contract now states
+that Core uses `/api/v0/preferences/{cookie,theme}` while non-Core browser endpoints remain under
+legacy `/web/v0` pending their own review. The before-action parity guidance now names both the
+non-Core legacy controllers and the canonical Core controllers. No route, controller behavior, or
+unmigrated service was changed by this documentation-only correction. `git diff --check` passed.
+The canonical Core route/controller files and OpenAPI discovery test also passed targeted RuboCop
+and Ruby syntax checks. No Rails request assertion was executed because test-schema boot still
+cannot resolve PostgreSQL `primary`.
+
+The read-only route inventory was rerun after the documentation correction; it exited 0 and
+asserted exactly `GET /api/v0/health.json` and `GET /api/v0/revision.json` for `edit/org/api/v0`.
+
+### E7b bounded Cookie scope verification — 2026-09-15
+
+Without connecting to PostgreSQL or Valkey, a read-only Rails runner instantiated the existing
+`AuthenticationCookieService` with test request objects for app, com, and org hosts. For both
+issuance and deletion options, `path`, `domain`, `same_site`, and `secure` matched on all three
+surfaces; deletion options omitted `expires` as required. This supports the source conclusion
+that no name/domain/path mismatch is currently evidenced. It does not prove a browser applied the
+`Set-Cookie` deletion headers after the complete sign-out ceremony; the cookie-jar request test
+remains pending behind isolated Rails services.
+
+### E9 bounded session-expiry semantics recheck — 2026-09-15
+
+The existing implementation already has a single fixed session deadline for the token-backed
+session inventory. `ClientToken`, `VisitorToken`, and `OperatorToken` persist `discarded_at` with
+an infinite default; session establishment supplies the finite deadline. `RefreshTokenable` copies
+that value unchanged during rotation and caps an explicitly proposed replacement deadline with
+`SessionAbsoluteExpiryValue`. `TokenStatusManagement#currently_usable_at` and the refresh issuer
+reject the record at or after the deadline. Access-token, ID-token, refresh-token, cookie, and DBSC
+expiry calculations all cap their proposed lifetime against the same root-token value. This is
+also stated by `docs/security/refresh-token-rotation.md`; no separate absolute-expiry column is
+justified by the inspected code and tests.
+
+The user-facing Base session presenter maps only the normalized fields `device`, `last_activity`,
+`created`, `expires_at`, `status`, and the org-only authentication mode. It does not expose
+`public_id`, token kind, binding, refresh-token expiry, generation, raw context, or token material.
+`expires_at` is rendered from the fixed session deadline, while refresh-token expiry remains an
+internal issuance/cookie value. `SessionTimestampHelper` converts the stored instant through the
+actor preference timezone, date format, and clock format before presentation. The inventory query
+is owner-scoped and filters at the database scope; it does not add a request-hot-path session
+lookup to ordinary Access JWT validation.
+
+Existing tests cover finite-deadline preservation across app/com/org rotation, rejection after the
+deadline, token-expiry capping, user-facing field suppression, preference formatting, and the org
+Emergency/Normal context distinction. The inspection did not prove the full DB-backed suite or
+browser rendering because PostgreSQL host `primary` is unavailable. E9's bounded presentation and
+expiry behavior is therefore classified **ALREADY_SATISFIED in source/tests, runtime validation
+pending**; no schema, route, presenter, or token change is proposed in this continuation.
+
+The post-update checks `find ... | ruby -c`, targeted RuboCop over the route/OpenAPI/security
+files, `RUBY_DEBUG_LAZY=1 bin/rails notes`, and `git diff --check` all exited 0. `bin/rails notes`
+lists the new actionable Base/Side/GUID route deferrals; it does not imply those deferred runtime
+contracts are resolved.
+
+The full `bundle exec rubocop --cache false` was rerun after this checkpoint: it inspected 4,786
+files and exited 0 with no offenses. An earlier intermediate run had reported the pre-existing
+PGHero line-length offense; this later complete run supersedes that transient result for the
+current worktree without modifying the PGHero route.
+
+`bun run openapi:lint && bun run openapi:verify` was also rerun after the documentation and route
+checkpoint. Both commands exited 0; Redocly validated all three source documents, regenerated the
+bundles deterministically, and `git diff --exit-code` found no generated-bundle drift.
+
+### User-provided Rails test runner evidence — 2026-09-15
+
+The user supplied an external terminal observation showing `bin/rails test` starting `12,992`
+tests with `16` processes and producing normal test dots before the process was interrupted with
+`^C`. This proves that, in that terminal environment, Rails boot/test discovery and at least part
+of the parallel test execution reached the test body. It is not a completed result: no final run
+count, failure/error count, skip count, coverage result, or exit-0 completion was observed because
+the command was manually stopped.
+
+The separate command `bin/rails test test:models` is not a valid Rails test path. Rails interpreted
+`test:models` as a file and raised `LoadError` for `/home/global/workspace/test:models`. The correct
+directory selector is `bin/rails test test/models` (or a specific file under that directory).
+The managed tool environment was rechecked after the user report; `primary` and `valkey` still did
+not resolve there, and `bin/rails test test/models` stopped during schema setup with
+`PG::ConnectionBad` before assertions. The two observations are recorded separately rather than
+using the sandbox failure to negate the user's terminal evidence or using the interrupted run as a
+green baseline.
+
+### E0 isolated test-environment implementation checkpoint — 2026-09-15
+
+This section supersedes the earlier environment-only **NO_GO** as an execution status for the
+user-authorized E0 setup work. It does not approve autonomous implementation of the remaining
+feature requirements, does not establish a full-suite baseline, and does not change the historical
+plan-only verdicts above.
+
+Starting state was preserved: branch `feature`, HEAD
+`7bee4819ffe2a402c63a04af2a368bfcaf253c0d`, with the existing Core route migration and other
+uncommitted paths unchanged. No checkout, reset, clean, stash, stage, commit, database reset/drop,
+remote write, provider request, or external IdP/mail/SMS request was performed.
+
+The E0 changes are local test configuration and support only:
+
+* `config/database.yml` now requires `POSTGRESQL_TEST_HOST` for every test database instead of
+  falling back to `POSTGRESQL_HOST` or localhost.
+* `config/environments/test.rb` requires and validates the responsibility URLs on Valkey logical
+  DBs 3/4/5 and requires a validated `VALKEY_NAMESPACE_RUN_ID`.
+* The three default auth-state stores include run/worker namespace scope. The existing direct
+  store tests continue to supply their own suite/worker/test namespaces.
+* `test/support/valkey_test_isolation.rb` updates the worker scope after Rails forks, and
+  `test/support/service_stubs.rb` is loaded by the test helper so the existing SMS safety stub is
+  available.
+* `scripts/test-environment-check`, `scripts/test-isolated`, and `scripts/test-valkey-cleanup`
+  perform read-only service identity checks and run-scoped SCAN/DEL cleanup. They never issue
+  `FLUSHDB` or `FLUSHALL`.
+* `test/config/test_environment_isolation_contract_test.rb` fixes the contract in 3 tests and 14
+  assertions. `docs/operations/test-environment.md` documents the explicit runner and provider
+  boundaries.
+
+The authorized host checks were real and read-only. PostgreSQL at `primary.dns.podman:5432`
+reported server 17.7, administration database `db`, and 646 `test_*` databases. Valkey at
+`valkey.dns.podman:6379` returned `PONG` on DB 3 (cache), DB 4 (rate limit), and DB 5 (auth
+state), server 7.2.4. The isolated smoke test exited 0 with `2 runs, 7 assertions, 0 failures,
+0 errors, 0 skips`; its run-scoped cleanup completed. The requested auth-code/OTP target command
+reached the application and exited 1 with `147 runs, 725 assertions, 0 failures, 3 errors, 0
+skips`; two OIDC exchange test helpers omit required client/redirect/PKCE keywords and one com
+sign-in test expects a missing `form_errors` prop. Those are application/test-contract failures,
+not inability to connect to PostgreSQL or Valkey. Full Rails/coverage results remain unclaimed.
+
+A two-worker smoke plus contract run also exited 0 with `5 runs, 21 assertions, 0 failures, 0
+errors, 0 skips`; both worker processes completed before the run-scoped cleanup.
+
+The full Rails suite then ran with 16 workers through the wrapper and exited 1 after 452.716
+seconds: `12995 runs, 78688 assertions, 4 failures, 15 errors, 3 skips`. This is a real
+application/contract result after service connectivity succeeded, not an environment boot failure.
+The subsequent `COVERAGE=true` attempt exited 1 before test assertions because Rails detected the
+newly present untracked `db/migrate/20260915000000_create_blazer_tables.rb` as pending; the partial
+SimpleCov report (52.02% line, 1.07% branch, 2.52% method) is not a baseline. Blazer migration,
+structure, and initializer paths appeared during the suite and were left untouched to preserve
+unrelated work.
+
+The local `bin/` directory is read-only in this execution sandbox, so the permitted preparation
+scripts live under `scripts/`; no workaround wrote into `bin/`. The host has no container runtime
+or local PostgreSQL/Valkey binaries, but the already-running test-only endpoints were reachable
+through the authorized host network. CI workflow service publication was not changed because the
+repository rule forbids publishing datastore ports; a non-published CI service network remains a
+separate environment task.
+
+Final E0 recheck: the read-only preflight exited 0 again with the same PostgreSQL/Valkey identities,
+and a run-scoped cleanup exited 0. The contract test was extended with a real auth-state key-scope
+assertion after the earlier green run; its rerun stopped before assertions because Rails reported
+the unrelated pending Blazer migration `db/migrate/20260915000000_create_blazer_tables.rb`.
+No migration was applied, so the earlier 3-run/14-assertion result remains the last executed
+contract result and the added assertion is explicitly unverified.

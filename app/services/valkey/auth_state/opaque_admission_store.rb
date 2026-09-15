@@ -102,7 +102,9 @@ module Valkey
 
       def default_connection
         Umaxica::Valkey::Connection.new(
-          namespace: Umaxica::Valkey::Namespaces.admission,
+          namespace: Umaxica::Valkey::Namespaces.admission(
+            **Umaxica::Valkey::Namespaces.runtime_scope,
+          ),
         )
       end
 

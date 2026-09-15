@@ -56,6 +56,9 @@ scope module: :side, as: :side do
       # consent). Mirrors auth and core; base still owns the full HTML preference screens. Without
       # it the theme/cookie controls rendered in the Side chrome POST to a route that does not
       # exist, so a choice changes the page but is never persisted.
+      # FIXME: Keep the Side browser preference endpoints under `/web/v0` until a compatibility
+      # review identifies every direct chrome caller and an owning `/api/v0` contract. This is a
+      # valuable application API, but a namespace-only move would break the current controls.
       namespace :web do
         namespace :v0 do
           resource :theme, only: %i(show update)
@@ -144,6 +147,9 @@ scope module: :side, as: :side do
       # consent). Mirrors auth and core; base still owns the full HTML preference screens. Without
       # it the theme/cookie controls rendered in the Side chrome POST to a route that does not
       # exist, so a choice changes the page but is never persisted.
+      # FIXME: Keep the Side browser preference endpoints under `/web/v0` until a compatibility
+      # review identifies every direct chrome caller and an owning `/api/v0` contract. This is a
+      # valuable application API, but a namespace-only move would break the current controls.
       namespace :web do
         namespace :v0 do
           resource :theme, only: %i(show update)
@@ -231,6 +237,9 @@ scope module: :side, as: :side do
       # consent). Mirrors auth and core; base still owns the full HTML preference screens. Without
       # it the theme/cookie controls rendered in the Side chrome POST to a route that does not
       # exist, so a choice changes the page but is never persisted.
+      # FIXME: Keep the Side browser preference endpoints under `/web/v0` until a compatibility
+      # review identifies every direct chrome caller and an owning `/api/v0` contract. This is a
+      # valuable application API, but a namespace-only move would break the current controls.
       namespace :web do
         namespace :v0 do
           resource :theme, only: %i(show update)

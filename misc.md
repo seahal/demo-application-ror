@@ -277,3 +277,66 @@ Next-cycle analysis question: Does the overflow occur for a minimal Bun/Vitest c
 Confirmation/falsification test or measurement: Compare one-node-project and one-component-project subsets, then a single-worker full suite, under the locked Bun and Node runtimes with coverage reports in `/tmp`; inspect `@bcoe/v8-coverage` inputs without modifying thresholds. Any proposed script change must preserve the same Vitest projects, test population, and coverage gates and make the `bin/ci` coverage stage green.
 
 Exit criterion: The canonical repository coverage entry point completes the same test population and enforces all configured thresholds without stack overflow, skipped tests, altered exclusions or changed thresholds. Related: E0-T2, E10-T1, REQ-069. Owner: current implementation run.
+
+MISC-0010 — E0 isolated Rails service checkpoint
+
+Status: MITIGATED for the current host-authorized test run; CI service provisioning remains OPEN.
+
+Category: testing / operations.
+
+Evidence level: REPRODUCED_TEST.
+
+First observed: 2026-09-15, E0 environment implementation, HEAD `7bee4819ffe2a402c63a04af2a368bfcaf253c0d`.
+
+Concrete evidence: A read-only preflight against `primary.dns.podman:5432` exited 0 and observed
+PostgreSQL 17.7, administration database `db`, and 646 `test_*` databases. Read-only Valkey
+probes against `valkey.dns.podman:6379` exited 0 for logical DBs 3, 4, and 5, each returning
+`PONG` from Valkey 7.2.4. The test wrapper now requires an explicit PostgreSQL test host,
+credentials, administration database, all three responsibility URLs, and a run identifier; it
+does not fall back from `POSTGRESQL_TEST_HOST` to `POSTGRESQL_HOST`.
+
+The wrapper command `PARALLEL_WORKERS=1 scripts/test-isolated bin/rails test
+test/lib/umaxica/valkey/connection_and_cleanup_test.rb` exited 0 with 2 runs, 7 assertions,
+0 failures, 0 errors, and 0 skips. Its final cleanup deleted only the run-scoped auth-state
+prefixes and verified them empty. The E0 contract test exited 0 with 3 runs and 14 assertions.
+The requested authorization-code and app/com OTP target run reached Rails and exited 1 with 147
+runs, 725 assertions, 0 failures, 3 errors, and 0 skips; the errors are application/test
+contract failures, not service-connectivity failures: two OIDC token-exchange helper calls omit
+required client/redirect/PKCE keywords, and one com sign-in Turnstile test expects a missing
+`form_errors` prop. Cleanup deleted 65 run-scoped keys.
+
+A two-worker smoke plus contract run exited 0 with 5 runs and 21 assertions, confirming the
+worker-scoped namespace hook and test database clone path without failures; its run-scoped
+cleanup completed after both workers.
+
+Implementation evidence: test boot validates Valkey DB assignments 3/4/5; application auth-state
+stores include run and worker scope; parallel-clone administration now requires
+`POSTGRESQL_DATABASE`; Action Mailer remains `:test`, SMS remains the `test` provider, the
+Turnstile verifier remains the suite stub, and outbound HTTP tests use the existing Faraday test
+adapter helper. No database was dropped/reset and no real provider request was made.
+
+Remaining gap: this host has no container runtime or local datastore binaries, so the reachable
+Podman-DNS services could not be started or inspected through a runtime CLI. The repository CI
+workflow was not changed to publish a datastore port; a compliant CI service-network setup still
+needs to provide the explicit test variables before the wrapper can be used there. Full Rails and
+coverage runs were not used as E0 completion evidence; the target run remains red for the three
+pre-existing application/test-contract errors above.
+
+The full Rails run was subsequently executed with 16 workers through the wrapper: exit 1 after
+452.716 seconds, 12,995 runs, 78,688 assertions, 4 failures, 15 errors, and 3 skips. This confirms
+the service setup reached application tests; it is not a green application baseline. A following
+SimpleCov run stopped before tests because Rails found the newly present untracked Blazer migration
+pending. Its partial 52.02% line / 1.07% branch / 2.52% method numbers are explicitly not a
+baseline. The Blazer migration, structure dump, and initializer changes were preserved as
+unrelated work.
+
+Exit criterion: keep the explicit test variables and run/worker namespace contract, provide a
+non-published test service network for CI or an equivalent approved runner, and resolve or
+separately classify the three application failures before claiming a green authentication suite.
+Related: E0-T1–T4, REQ-064/066/069. Owner: current implementation run.
+
+Final E0 recheck: `scripts/test-environment-check` exited 0 again against PostgreSQL
+`primary.dns.podman:5432` and Valkey `valkey.dns.podman:6379` DBs 3/4/5. A scoped cleanup for a
+new run ID exited 0 and deleted zero keys. The post-addition contract test could not be rerun
+because Rails now refuses to boot with the unrelated pending `db/migrate/20260915000000_create_blazer_tables.rb`; no migration was applied. The previously executed 3/14 contract result
+remains the last green result for that test file.

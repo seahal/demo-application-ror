@@ -121,27 +121,27 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
     )
 
     assert_recognizes(
-      { controller: "core/app/web/v0/cookies", action: "show" },
+      { controller: "core/app/api/v0/preferences/cookies", action: "show" },
       { path: "http://#{CORE_APP_HOST}/api/v0/preferences/cookie", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/app/web/v0/cookies", action: "update" },
+      { controller: "core/app/api/v0/preferences/cookies", action: "update" },
       { path: "http://#{CORE_APP_HOST}/api/v0/preferences/cookie", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/app/web/v0/themes", action: "show" },
+      { controller: "core/app/api/v0/preferences/themes", action: "show" },
       { path: "http://#{CORE_APP_HOST}/api/v0/preferences/theme", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/app/web/v0/themes", action: "update" },
+      { controller: "core/app/api/v0/preferences/themes", action: "update" },
       { path: "http://#{CORE_APP_HOST}/api/v0/preferences/theme", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/app/edge/v0/dbsc", action: "create" },
+      { controller: "core/app/api/v0/preferences/dbsc", action: "create" },
       { path: "http://#{CORE_APP_HOST}/api/v0/preferences/dbsc", method: :post },
     )
 
@@ -255,27 +255,27 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
     )
 
     assert_recognizes(
-      { controller: "core/com/web/v0/cookies", action: "show" },
+      { controller: "core/com/api/v0/preferences/cookies", action: "show" },
       { path: "http://#{CORE_COM_HOST}/api/v0/preferences/cookie", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/com/web/v0/cookies", action: "update" },
+      { controller: "core/com/api/v0/preferences/cookies", action: "update" },
       { path: "http://#{CORE_COM_HOST}/api/v0/preferences/cookie", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/com/web/v0/themes", action: "show" },
+      { controller: "core/com/api/v0/preferences/themes", action: "show" },
       { path: "http://#{CORE_COM_HOST}/api/v0/preferences/theme", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/com/web/v0/themes", action: "update" },
+      { controller: "core/com/api/v0/preferences/themes", action: "update" },
       { path: "http://#{CORE_COM_HOST}/api/v0/preferences/theme", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/com/edge/v0/dbsc", action: "create" },
+      { controller: "core/com/api/v0/preferences/dbsc", action: "create" },
       { path: "http://#{CORE_COM_HOST}/api/v0/preferences/dbsc", method: :post },
     )
 
@@ -390,27 +390,27 @@ class CoreRouteContractTest < ActionDispatch::IntegrationTest
     )
 
     assert_recognizes(
-      { controller: "core/org/web/v0/cookies", action: "show" },
+      { controller: "core/org/api/v0/preferences/cookies", action: "show" },
       { path: "http://#{CORE_ORG_HOST}/api/v0/preferences/cookie", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/org/web/v0/cookies", action: "update" },
+      { controller: "core/org/api/v0/preferences/cookies", action: "update" },
       { path: "http://#{CORE_ORG_HOST}/api/v0/preferences/cookie", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/org/web/v0/themes", action: "show" },
+      { controller: "core/org/api/v0/preferences/themes", action: "show" },
       { path: "http://#{CORE_ORG_HOST}/api/v0/preferences/theme", method: :get },
     )
 
     assert_recognizes(
-      { controller: "core/org/web/v0/themes", action: "update" },
+      { controller: "core/org/api/v0/preferences/themes", action: "update" },
       { path: "http://#{CORE_ORG_HOST}/api/v0/preferences/theme", method: :patch },
     )
 
     assert_recognizes(
-      { controller: "core/org/edge/v0/dbsc", action: "create" },
+      { controller: "core/org/api/v0/preferences/dbsc", action: "create" },
       { path: "http://#{CORE_ORG_HOST}/api/v0/preferences/dbsc", method: :post },
     )
 

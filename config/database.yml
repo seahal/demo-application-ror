@@ -1,5 +1,7 @@
 <%
-  test_host = ENV.fetch("POSTGRESQL_TEST_HOST", ENV.fetch("POSTGRESQL_HOST", "localhost"))
+  # Test databases are a separate safety boundary. Reusing the development host when the
+  # test host is absent can point a destructive test preparation task at the wrong server.
+  test_host = Rails.env.test? ? ENV.fetch("POSTGRESQL_TEST_HOST") : nil
 
   # Every `development:` host is required configuration: a missing name used to
   # fall back to a shared default, which silently pointed a database at the

@@ -74,7 +74,10 @@ module Valkey
       private
 
       def default_connection
-        Umaxica::Valkey::Connection.new(namespace: Umaxica::Valkey::Namespaces::SIGN_OUT_NOTICES)
+        namespace = Umaxica::Valkey::Namespaces.sign_out_notices(
+          **Umaxica::Valkey::Namespaces.runtime_scope,
+        )
+        Umaxica::Valkey::Connection.new(namespace: namespace)
       end
 
       def normalize_payload(payload, now:, ttl:)
