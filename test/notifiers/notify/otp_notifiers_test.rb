@@ -93,6 +93,19 @@ class Notify::OtpNotifiersTest < ActiveSupport::TestCase
     assert_match "verification-token", mail.html_part.body.decoded
   end
 
+  test "purpose-specific delivery reaches the app mailer without exposing the otp" do
+    record = create_otp_email_record(:app, address: "notifier-purpose@example.com")
+
+    perform_enqueued_jobs do
+      Notify::App::OtpNotifier.issue(record: record, otp_code: "123456", purpose: :sign_in)
+    end
+
+    mail = ActionMailer::Base.deliveries.last
+
+    assert_equal I18n.t("mail.email.app.otp_mailer.create.subjects.sign_in"), mail.subject
+    assert_not_includes mail.subject, "123456"
+  end
+
   # Regression guard for the surface boundary: an app OTP must never leave through
   # the com or org sender, and vice versa.
   test "each surface notifier reaches only its own mailer" do

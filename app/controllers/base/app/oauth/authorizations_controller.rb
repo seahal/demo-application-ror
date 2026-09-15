@@ -12,11 +12,15 @@ module Base
         skip_before_action :set_region, raise: false
 
         def show
-          if params[:login_challenge].present?
+          if params[:result].present?
+            payload = BaseAuthAdmissionCoordinator.consume_result!(
+              raw_code: params[:result].to_s,
+              surface: "app",
+            )
             transaction =
-              OidcAuthorizationTransactionCoordinator.find_by_login_challenge!(
+              OidcAuthorizationTransactionCoordinator.find_by_transaction_id!(
                 surface: "app",
-                login_challenge: params[:login_challenge].to_s,
+                transaction_id: payload.fetch("subject_ref"),
               )
             validate_authorization_request!(transaction.authorize_params)
             resume_authorization!(transaction)
@@ -39,6 +43,9 @@ module Base
           render json: { error: "invalid_request", error_description: e.message }, status: :bad_request
         # RecordNotFound is different: its message names the model and the primary key that
         # was looked up. The client gets a fixed description; the detail goes to the log.
+        rescue BaseAuthAdmissionCoordinator::Denied, Umaxica::Valkey::Unavailable, Umaxica::Valkey::OperationError
+          render json: { error: "invalid_request", error_description: "invalid authorization request" },
+                 status: :bad_request
         rescue ActiveRecord::RecordNotFound => e
           Rails.logger.info(
             JitLogEvent.format(
@@ -59,7 +66,7 @@ module Base
           )
         end
 
-        def issue_authorization_code!(resource, params_hash: authorize_params)
+        def issue_authorization_code!(resource, params_hash: authorize_params, authentication_event_at: nil)
           access_claims = Actor.authn.access_claims
           result = ::OidcAuthorizeCoordinator.call(
             params: params_hash,
@@ -67,6 +74,7 @@ module Base
             session_token: current_session,
             auth_method: Array(access_claims&.dig("amr")).first,
             acr: access_claims&.dig("acr"),
+            authentication_event_at: authentication_event_at || current_authentication_event_at,
           )
 
           if result.success?
@@ -84,20 +92,21 @@ module Base
               intent: authorization_intent,
               params: authorize_params,
             )
+          handoff = BaseAuthAdmissionCoordinator.issue_handoff!(transaction: issuance.transaction)
           sign_url =
             if authorization_intent == "sign_up"
               auth_app_sign_up_url(
                 ri: params[:ri],
                 host: oidc_sign_host,
                 protocol: oidc_sign_protocol,
-                login_challenge: issuance.transaction.login_challenge,
+                admission: handoff.code,
               )
             else
               auth_app_sign_in_url(
                 ri: params[:ri],
                 host: oidc_sign_host,
                 protocol: oidc_sign_protocol,
-                login_challenge: issuance.transaction.login_challenge,
+                admission: handoff.code,
               )
             end
           redirect_to_jump_url(sign_url)
@@ -127,6 +136,7 @@ module Base
                 require_totp_check: false,
                 audit_context: { oidc_client_id: transaction.client_id },
                 bootstrap_actor: true,
+                authentication_event_at: transaction.authenticated_at,
               )
             end
           return redirect_to_session_limitation!(
@@ -139,7 +149,11 @@ module Base
           ) unless login_result[:status] == :success
 
           transaction.consume!
-          issue_authorization_code!(resource, params_hash: transaction.authorize_params)
+          issue_authorization_code!(
+            resource,
+            params_hash: transaction.authorize_params,
+            authentication_event_at: transaction.authenticated_at,
+          )
         end
 
         def redirect_to_session_limitation!(resource, transaction)

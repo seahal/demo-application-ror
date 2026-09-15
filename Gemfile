@@ -41,6 +41,7 @@ gem "pg_search"
 gem "rails-pg-extras", require: false
 # Redis client.
 gem "redis"
+gem "hiredis-client"
 # HTTP client for hand-written outbound requests. Already resolved transitively
 # through the OIDC and OAuth gem chain; declared here because application code
 # depends on it directly via OutboundHttp::Connection.
@@ -131,8 +132,9 @@ gem "store_attribute"
 gem "store_model"
 # Stripe API client.
 gem "stripe", require: false
-# dependency
-gem "ruby-vips"
+# Loaded explicitly only by image-processing paths. Host-native test runs do not
+# require libvips merely to boot Rails.
+gem "ruby-vips", require: false
 # log
 gem "lograge"
 # json
@@ -229,10 +231,6 @@ group :development do
   gem "foreman", require: false
   # Documentation generator.
   gem "yard", require: false
-  # Browser email previewer.
-  gem "letter_opener", require: false
-  # Web UI for email previews.
-  gem "letter_opener_web", require: false
   # Hotwire live reload helper.
   gem "hotwire-spark"
   # Rails live reload helper.

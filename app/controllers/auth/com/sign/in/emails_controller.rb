@@ -17,6 +17,7 @@ module Auth
           include SessionLimitGate
           include ::SurfaceInertiaPage
           include ::TurnstilePageProps
+          include ::AuthenticationModeSwitchGuard
 
           AUTHENTICATION_MODE = :guest
 
@@ -104,6 +105,8 @@ module Auth
           end
 
           def update
+            return unless verify_email_otp_turnstile
+
             @user_email.pass_code = update_pass_code_params[:pass_code]
             unless @user_email.valid?
               @user_email.errors.add(:pass_code, t("sign.app.authentication.email.update.invalid_code"))
@@ -147,6 +150,18 @@ module Auth
           end
 
           private
+
+          def verify_email_otp_turnstile
+            return true if cloudflare_turnstile_validation["success"]
+
+            @user_email.errors.add(:base, t("turnstile_error"))
+            render(
+              inertia: "auth/com/sign/in/emails/edit",
+              props: sign_in_email_edit_props,
+              status: :unprocessable_content,
+            )
+            false
+          end
 
           # A rejected submission re-renders this page with 422 and the errors the page reads.
           # Which guard rejected the submission, and what it says, is unchanged.
@@ -216,12 +231,15 @@ module Auth
                 redirect_to(new_auth_com_sign_in_email_path(pt: peek_pt, ri: current_region_identifier))
                 return
               end
-              @otp_resend_state = SignInOtpResendState.issue(kind: :email, target: @user_email.address)
+              @otp_resend_state = SignInOtpResendState.issue(
+                kind: :email, target: @user_email.address, surface: :com,
+              )
             elsif session[:user_email_authentication_address].present?
               @user_email = VisitorEmail.new(address: session[:user_email_authentication_address])
               @otp_resend_state = SignInOtpResendState.issue(
                 kind: :email,
                 target: session[:user_email_authentication_address],
+                surface: :com,
               )
             else
               redirect_to(new_auth_com_sign_in_email_path(pt: peek_pt, ri: current_region_identifier))
@@ -262,6 +280,7 @@ module Auth
               OtpAdapter.for(surface: :com, channel: :email).deliver(
                 record: existing_email,
                 otp_code: otp_code,
+                purpose: :sign_in,
               )
             else
               perform_dummy_otp_generation

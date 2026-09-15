@@ -80,11 +80,11 @@ class OidcRefreshTokenIssuer
   # whole lookup.
   def find_usage(public_id)
     AppTicketRecord.connected_to(role: :writing) do
-      ClientTokenUsage.find_by(public_id: public_id)
+      ClientRpSession.find_by(public_id: public_id)
     end || OrgTicketRecord.connected_to(role: :writing) do
-      OperatorTokenUsage.find_by(public_id: public_id)
+      OperatorRpSession.find_by(public_id: public_id)
     end || ComTicketRecord.connected_to(role: :writing) do
-      VisitorTokenUsage.find_by(public_id: public_id)
+      VisitorRpSession.find_by(public_id: public_id)
     end
   end
 
@@ -107,10 +107,12 @@ class OidcRefreshTokenIssuer
       )
     end
 
+    RefreshTokenReuseActivityRecorder.call(token: parent, result: "rp_session_revoked") if parent
+
     Rails.logger.info(
       JitLogEvent.format(
         "authentication.oidc_refresh.reuse_detected",
-        token_usage_id: usage.public_id,
+        rp_session_id: usage.public_id,
         oidc_client_id: usage.oidc_client_id,
         actor_type: parent&.class&.name,
         actor_id: actor_id,

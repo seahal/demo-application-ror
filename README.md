@@ -95,8 +95,12 @@ bin/setup
 `compose.yaml` owns shared infrastructure for both development modes. In Dev Container mode,
 `.devcontainer/compose.yaml` adds `core`; in host-native mode, Rails runs directly on the VM and
 `podman compose up -d` starts only PostgreSQL, Valkey, FakeCloud, and observability services.
-`compose.override.yaml` is an optional, gitignored, per-machine override; see
-`compose.override.yaml.example` and the Dev Container startup documentation.
+`compose.override.yaml` is the only other root Compose file. It is **untracked and gitignored**
+(since 2026-09-14), auto-discovered by a bare `podman compose`, and everything in it is
+profile-gated: it carries the opt-in `remote-access` Tailscale/sshd overlay of `core` and is where
+per-machine settings go. Being untracked is what keeps those settings per-machine; a fresh clone
+does not have the file, and does not need it. See the Dev
+Container startup documentation.
 
 ```bash
 POSTGRESQL_USER=root
@@ -246,12 +250,14 @@ Use `rubocop -a`, `erb_lint -a .`, and `bun run fix` to apply auto-fixes where a
 ### Rails Tests
 
 ```bash
-bundle exec rails test
-COVERAGE=true bundle exec rails test
+scripts/test-isolated bin/rails test
+COVERAGE=true scripts/test-isolated bin/rails test test/
 ```
 
-Coverage reports are written to `coverage/`. `COVERAGE=true` forces a single test worker, so a
-coverage run takes considerably longer than an ordinary parallel run.
+The isolated wrapper requires an explicit PostgreSQL test host and the test Valkey logical DBs
+before Rails boots; it performs a read-only identity check and cleans only its run-scoped
+auth-state keys. Coverage reports are written to `coverage/`. Set `PARALLEL_WORKERS=1` for a
+focused run when diagnosing a failure.
 
 ### JavaScript Tests
 

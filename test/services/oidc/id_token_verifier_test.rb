@@ -93,6 +93,12 @@ class OidcIdTokenVerifierTest < ActiveSupport::TestCase
     assert_invalid token_with_claims("nbf" => 10.minutes.from_now.to_i)
   end
 
+  test "rejects an authentication time beyond the configured clock leeway" do
+    future_auth_time = Time.current.to_i + AuthenticationJwtConfiguration.leeway_seconds + 1
+
+    assert_invalid token_with_claims("auth_time" => future_auth_time)
+  end
+
   private
 
   def id_token(issuer: @issuer, issued_at: Time.current.utc, expires_at: 5.minutes.from_now)
@@ -108,13 +114,19 @@ class OidcIdTokenVerifierTest < ActiveSupport::TestCase
   end
 
   def token_with_claims(overrides)
-    JitSecurityJwtKeyring.encode(valid_claims.merge(overrides), issuer_id: @jwt_issuer_id)
+    claims = valid_claims.merge(overrides)
+    JitSecurityJwtKeyring.encode(claims, typ: claim_typ(claims), issuer_id: @jwt_issuer_id)
   end
 
   def token_with_claims_without(*keys)
     claims = valid_claims
     keys.each { |key| claims.delete(key) }
-    JitSecurityJwtKeyring.encode(claims, issuer_id: @jwt_issuer_id)
+    JitSecurityJwtKeyring.encode(claims, typ: claim_typ(claims), issuer_id: @jwt_issuer_id)
+  end
+
+  # The forged header mirrors the payload typ so wrong-typ cases stay wrong in both places.
+  def claim_typ(claims)
+    claims.stringify_keys["typ"].presence || SecurityJwtOidcIdTokenCodec::TOKEN_TYPE
   end
 
   def valid_claims

@@ -7,6 +7,8 @@ class SignInOtpResender
   include CommonOtp
 
   KIND = "email"
+  SURFACES = SignInOtpResendState::SURFACES.map(&:to_sym).freeze
+  EMAIL_MODELS = { app: ClientEmail, com: VisitorEmail }.freeze
   BASE_SECONDS = 30
   EMAIL_CAP_SECONDS = 15.minutes.to_i
   INVALID_RETRY_AFTER = 30
@@ -15,16 +17,21 @@ class SignInOtpResender
 
   Response = Struct.new(:status, :resendable, :retry_after, keyword_init: true)
 
-  def initialize(kind:, state:)
+  def initialize(kind:, state:, surface:)
     @kind = kind.to_s
     raise ArgumentError, "unsupported sign-in OTP resend kind: #{@kind}" unless @kind == KIND
+
+    @surface = surface.to_s.to_sym
+    unless SURFACES.include?(@surface)
+      raise ArgumentError, "unsupported sign-in OTP resend surface: #{@surface}"
+    end
 
     @state = state
   end
 
   def call
     parsed = SignInOtpResendState.parse(@state)
-    return invalid_response unless parsed && parsed[:kind] == @kind
+    return invalid_response unless parsed && parsed[:kind] == @kind && parsed[:surface] == @surface.to_s
 
     normalized_target = IdentifierBlindIndex.normalize_email(parsed[:target])
     return invalid_response if normalized_target.blank?
@@ -81,7 +88,7 @@ class SignInOtpResender
   end
 
   def issue_and_send!(normalized_target)
-    records = ClientEmail.with_address(normalized_target)
+    records = EMAIL_MODELS.fetch(@surface).with_address(normalized_target)
 
     return if records.any?(&:locked?)
 
@@ -103,8 +110,8 @@ class SignInOtpResender
 
     otp_code = generate_otp_for(target)
     OtpAdapter
-      .for(surface: :app, channel: :email)
-      .deliver(record: target, otp_code: otp_code)
+      .for(surface: @surface, channel: :email)
+      .deliver(record: target, otp_code: otp_code, purpose: :sign_in)
   end
 
   def log_issued!(occurrence:, issued_timestamps:)

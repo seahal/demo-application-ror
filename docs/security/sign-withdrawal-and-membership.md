@@ -63,8 +63,10 @@ The user-visible sequence is distinct from the state-machine status names.
 - The withdrawal is finalized by setting `discarded_at` to the logical deletion time.
 - `purged_at` is set to `discarded_at + 31.days`.
 - The cycle transitions to `DISCARDED`.
-- Other sessions are revoked; the current verified session may continue only for the allowed
-  withdrawal-continuation surface.
+- Every session of the actor is revoked, including the requesting session, and the auth cookies are
+  cleared.
+- Withdrawal status, recovery, and early termination continue through the withdrawal ceremony, not
+  through a session.
 - The account row is not physically deleted by self-service withdrawal.
 
 3''. Recovery

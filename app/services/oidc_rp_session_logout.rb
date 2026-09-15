@@ -41,9 +41,9 @@ class OidcRpSessionLogout < ApplicationService
 
   def usage_class
     case resource_type.to_s
-    when "operator", "staff" then OperatorTokenUsage
-    when "visitor", "customer" then VisitorTokenUsage
-    else ClientTokenUsage
+    when "operator", "staff" then OperatorRpSession
+    when "visitor", "customer" then VisitorRpSession
+    else ClientRpSession
     end
   end
 

@@ -155,7 +155,7 @@ class SignOtpCeremony
   def deliver!(record, otp_code)
     OtpAdapter
       .for(surface: surface, channel: channel)
-      .deliver(record: record, otp_code: otp_code)
+      .deliver(record: record, otp_code: otp_code, purpose: purpose)
   end
 
   def result(success, status, record: nil, code: nil, error: nil)

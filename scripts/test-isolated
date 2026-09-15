@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${POSTGRESQL_TEST_HOST:?POSTGRESQL_TEST_HOST is required; do not reuse POSTGRESQL_HOST implicitly}"
+: "${POSTGRESQL_PORT:?POSTGRESQL_PORT is required}"
+: "${POSTGRESQL_USER:?POSTGRESQL_USER is required}"
+: "${POSTGRESQL_PASSWORD:?POSTGRESQL_PASSWORD is required}"
+: "${POSTGRESQL_DATABASE:?POSTGRESQL_DATABASE is required}"
+: "${CACHE_REDIS_URL:?CACHE_REDIS_URL is required and must use test logical DB 3}"
+: "${RATE_LIMIT_REDIS_URL:?RATE_LIMIT_REDIS_URL is required and must use test logical DB 4}"
+: "${AUTH_STATE_REDIS_URL:?AUTH_STATE_REDIS_URL is required and must use test logical DB 5}"
+
+export RAILS_ENV=test
+export RACK_ENV=test
+export VALKEY_NAMESPACE_RUN_ID="${VALKEY_NAMESPACE_RUN_ID:-e0-$(date -u +%Y%m%d%H%M%S)-$$}"
+export VALKEY_NAMESPACE_WORKER_ID="${VALKEY_NAMESPACE_WORKER_ID:-parent}"
+
+bundle exec ruby scripts/test-environment-check
+
+if (($# == 0)); then
+  set -- bin/rails test
+fi
+
+status=0
+set +e
+"$@"
+status=$?
+set -e
+
+cleanup_status=0
+bundle exec ruby scripts/test-valkey-cleanup || cleanup_status=$?
+if ((status == 0 && cleanup_status != 0)); then
+  status=$cleanup_status
+fi
+exit "$status"

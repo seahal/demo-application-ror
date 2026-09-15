@@ -28,6 +28,7 @@
     ".ruby-lsp/**",
     "public/assets/**",
     "public/packs/**",
+    "public/openapi*.yml",
     "db/**",
     "log/**"
   ]

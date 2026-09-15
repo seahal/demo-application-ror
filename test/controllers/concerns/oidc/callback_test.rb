@@ -53,7 +53,8 @@ class OidcCallbackTestController < ApplicationController
   end
 
   def oidc_token_url
-    "http://id.app.localhost/oauth/token"
+    host = Rails.configuration.x.boot_config.fetch(:hosts).base_service.host
+    "http://#{host}:3000/oauth/token"
   end
 
   def oidc_callback_url
@@ -95,6 +96,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
   self.fixture_table_names = []
 
   setup do
+    @authentication_event_at = Time.utc(2026, 1, 2, 3, 4, 5).to_i
     OidcCallbackTestController.login_result_for_test = nil
     OidcCallbackTestController.last_login_kwargs = nil
     OidcCallbackTestController.last_session_limit_gate_pt = nil
@@ -125,7 +127,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "nonce" },
+      payload: { "sub" => "42", "nonce" => "nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
 
@@ -139,6 +141,89 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/after"
     assert_not OidcCallbackTestController.last_login_kwargs.fetch(:bootstrap_actor, false)
     assert OidcCallbackTestController.last_login_kwargs.fetch(:skip_login_cooldown)
+  end
+
+  test "forwards the ID Token authentication event time into the local session" do
+    auth_time = Time.utc(2026, 1, 2, 3, 4, 5).to_i
+    get "/oidc/callback/session",
+        params: { code_verifier: "verifier", state: "state", nonce: "nonce", pt: "/after" }
+
+    result = Result.new(
+      success?: true,
+      token_response: { access_token: "access", refresh_token: "refresh", id_token: "id-token" },
+      error: nil,
+      error_description: nil,
+    )
+    id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
+      success?: true,
+      payload: { "sub" => "42", "nonce" => "nonce", "auth_time" => auth_time },
+      error: nil,
+    )
+
+    OidcRpTokenClient.stub(:call, result) do
+      OidcIdTokenVerifier.stub(:call, id_token_result) do
+        get "/oidc/callback", params: { code: "abc", state: "state" }
+      end
+    end
+
+    assert_response :redirect
+    assert_equal Time.at(auth_time).utc,
+                 OidcCallbackTestController.last_login_kwargs.fetch(:authentication_event_at)
+  end
+
+  test "rejects a verified ID Token without an authentication event time" do
+    get "/oidc/callback/session",
+        params: { code_verifier: "verifier", state: "state", nonce: "nonce", pt: "/after" }
+
+    result = Result.new(
+      success?: true,
+      token_response: { access_token: "access", refresh_token: "refresh", id_token: "id-token" },
+      error: nil,
+      error_description: nil,
+    )
+    id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
+      success?: true,
+      payload: { "sub" => "42", "nonce" => "nonce" },
+      error: nil,
+    )
+
+    OidcRpTokenClient.stub(:call, result) do
+      OidcIdTokenVerifier.stub(:call, id_token_result) do
+        get "/oidc/callback", params: { code: "abc", state: "state" }
+      end
+    end
+
+    assert_response :redirect
+    assert_redirected_to "https://#{configured_host(:sign_service)}/sign/in"
+    assert_nil OidcCallbackTestController.last_login_kwargs
+  end
+
+  test "rejects a verified ID Token with an authentication event time beyond clock leeway" do
+    get "/oidc/callback/session",
+        params: { code_verifier: "verifier", state: "state", nonce: "nonce", pt: "/after" }
+
+    result = Result.new(
+      success?: true,
+      token_response: { access_token: "access", refresh_token: "refresh", id_token: "id-token" },
+      error: nil,
+      error_description: nil,
+    )
+    future_auth_time = Time.current.to_i + AuthenticationJwtConfiguration.leeway_seconds + 1
+    id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
+      success?: true,
+      payload: { "sub" => "42", "nonce" => "nonce", "auth_time" => future_auth_time },
+      error: nil,
+    )
+
+    OidcRpTokenClient.stub(:call, result) do
+      OidcIdTokenVerifier.stub(:call, id_token_result) do
+        get "/oidc/callback", params: { code: "abc", state: "state" }
+      end
+    end
+
+    assert_response :redirect
+    assert_redirected_to "https://#{configured_host(:sign_service)}/sign/in"
+    assert_nil OidcCallbackTestController.last_login_kwargs
   end
 
   test "show consumes the matching pending flow instead of the latest legacy flow" do
@@ -162,7 +247,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "older-nonce" },
+      payload: { "sub" => "42", "nonce" => "older-nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
     token_call = nil
@@ -176,6 +261,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_redirected_to "/settings?ri=jp"
     assert_equal "older-verifier", token_call.fetch(:code_verifier)
+    assert_not token_call.fetch(:require_https)
   end
 
   test "show rejects expired pending state before token exchange and preserves other pending flows" do
@@ -239,7 +325,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "consumed-nonce" },
+      payload: { "sub" => "42", "nonce" => "consumed-nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
 
@@ -280,7 +366,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "consumed-nonce" },
+      payload: { "sub" => "42", "nonce" => "consumed-nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
 
@@ -359,7 +445,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "nonce" },
+      payload: { "sub" => "42", "nonce" => "nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
     OidcCallbackTestController.login_result_for_test = {
@@ -391,7 +477,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "sub" => "42", "nonce" => "nonce" },
+      payload: { "sub" => "42", "nonce" => "nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
     OidcCallbackTestController.login_result_for_test = {
@@ -467,7 +553,7 @@ class OidcCallbackTest < ActionDispatch::IntegrationTest
     )
     id_token_result = Struct.new(:success?, :payload, :error, keyword_init: true).new(
       success?: true,
-      payload: { "nonce" => "nonce" },
+      payload: { "nonce" => "nonce", "auth_time" => @authentication_event_at },
       error: nil,
     )
 

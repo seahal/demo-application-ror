@@ -30,6 +30,7 @@ module Notify
               email_address: recipient.address,
               verification_token: params[:verification_token],
               public_id: params[:public_id],
+              purpose: params[:purpose],
             }
           }
       end

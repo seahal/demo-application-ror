@@ -96,7 +96,7 @@ class SocialAuthLoginTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     assert_equal configured_host(:acme_service), URI.parse(response.location).host
-    assert_equal "/dashboard", URI.parse(response.location).path
+    assert_equal "/", URI.parse(response.location).path
 
     cycle = ClientSignInFlow.where(principal_id: existing_user.id).recent_first.first
 
@@ -157,7 +157,7 @@ class SocialAuthLoginTest < ActionDispatch::IntegrationTest
           headers: browser_headers
 
     assert_predicate selected_session.reload, :revoked?
-    assert_redirected_to acme_app_dashboard_url(
+    assert_redirected_to base_app_root_url(
       ri: "jp",
       host: ENV.fetch(
         "PRIVATE_BASE_SERVICE_URL", "www.app.localhost",
@@ -264,7 +264,7 @@ class SocialAuthLoginTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     assert_equal configured_host(:acme_service), URI.parse(response.location).host
-    assert_equal "/dashboard", URI.parse(response.location).path
+    assert_equal "/", URI.parse(response.location).path
     assert_equal user_count_before, Client.count
 
     sign_in_cycle = ClientSignInFlow.where(principal_id: existing_user.id).recent_first.first
@@ -406,7 +406,7 @@ class SocialAuthLoginTest < ActionDispatch::IntegrationTest
 
     assert_response :redirect
     assert_equal configured_host(:acme_service), URI.parse(response.location).host
-    assert_equal "/dashboard", URI.parse(response.location).path
+    assert_equal "/", URI.parse(response.location).path
     assert_equal user_count_before, Client.count
 
     sign_in_cycle = ClientSignInFlow.where(principal_id: existing_user.id).recent_first.first

@@ -43,6 +43,45 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_kind_of Integer, result.token_response[:expires_in]
   end
 
+  test "exchanged OIDC access id and refresh tokens end by the root session expiry" do
+    travel_to(@user_session_token.created_at + 1.second) do
+      absolute_expiry = 2.minutes.from_now
+      @user_session_token.update!(discarded_at: absolute_expiry)
+      code_record = issue_code!
+
+      result =
+        with_authenticated_client do
+          OidcTokenExchangeCoordinator.call(
+            grant_type: "authorization_code",
+            code: code_record.code,
+            redirect_uri: @redirect_uri,
+            client_id: "core-next-rp",
+            client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+            client_assertion: "test-client-assertion",
+            token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+            code_verifier: @code_verifier,
+          )
+        end
+
+      assert_predicate result, :success?
+      access_token = AuthenticationTokenService.decode(
+        result.token_response.fetch(:access_token),
+        host: OidcIssuer.host_for_client(@client),
+        resource_type: "client",
+        issuer: OidcIssuer.for_client(@client),
+        audiences: [@client.aud],
+        jwt_issuer_id: OidcIssuer.jwt_issuer_id_for_client(@client),
+      )
+      id_token = JWT.decode(result.token_response.fetch(:id_token), nil, false).first
+      usage = ClientRpSession.find_by!(client_token: @user_session_token, oidc_client_id: @client.client_id)
+
+      assert_operator Time.zone.at(access_token.fetch("exp")), :<=, absolute_expiry
+      assert_operator Time.zone.at(id_token.fetch("exp")), :<=, absolute_expiry
+      assert_operator result.token_response.fetch(:expires_in), :<=, (absolute_expiry - Time.current).to_i
+      assert_operator usage.refresh_token_expires_at, :<=, absolute_expiry
+    end
+  end
+
   test "exchanges valid code with private_key_jwt client assertion" do
     code_record = issue_code!
     token_url = "https://log.umaxica.app/oauth/token"
@@ -201,9 +240,9 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
       )
     end
 
-    code_record.reload
+    payload = authorization_code_store.read(code_record.code)
 
-    assert_predicate code_record, :consumed?
+    assert_equal "consumed", payload.fetch("state")
   end
 
   test "fails for wrong grant_type" do
@@ -438,8 +477,12 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
   test "explicit public client rejects plain pkce code" do
     public_client = public_visitor_account
-    code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
-    code_record.update_columns(code_challenge: @code_verifier, code_challenge_method: "plain")
+    code_record = plant_authorization_code!(
+      client_id: public_client.client_id,
+      redirect_uri: public_client.redirect_uris.first,
+      code_challenge: @code_verifier,
+      code_challenge_method: "plain",
+    )
 
     with_public_client(public_client) do
       result = OidcTokenExchangeCoordinator.call(
@@ -532,7 +575,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal "invalid_request", result.error
     assert_equal "client_id mismatch", result.error_description
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "token exchange rejects codes with disallowed scopes" do
@@ -555,14 +598,14 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal "invalid_grant", result.error
     assert_equal "Authorization code scope is invalid", result.error_description
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "explicit public client fails with expired code" do
     public_client = public_visitor_account
     code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
 
-    travel ClientAuthorizationCode::CODE_TTL + 1.second do
+    travel Valkey::AuthState::AuthorizationCodeStore::CODE_TTL + 1.second do
       with_public_client(public_client) do
         result = OidcTokenExchangeCoordinator.call(
           grant_type: "authorization_code",
@@ -582,7 +625,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   test "explicit public client fails with reused code" do
     public_client = public_visitor_account
     code_record = issue_code!(client_id: public_client.client_id, redirect_uri: public_client.redirect_uris.first)
-    code_record.consume!
+    consume_issued_code!(code_record)
 
     with_public_client(public_client) do
       result = OidcTokenExchangeCoordinator.call(
@@ -676,7 +719,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   test "fails for expired code" do
     code_record = issue_code!
 
-    travel ClientAuthorizationCode::CODE_TTL + 1.second do
+    travel Valkey::AuthState::AuthorizationCodeStore::CODE_TTL + 1.second do
       result =
         with_authenticated_client do
           OidcTokenExchangeCoordinator.call(
@@ -698,7 +741,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
   test "fails for already consumed code" do
     code_record = issue_code!
-    code_record.consume!
+    consume_issued_code!(code_record)
 
     result =
       with_authenticated_client do
@@ -716,6 +759,144 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_grant", result.error
+  end
+
+  test "fails closed when replay family revocation cannot be completed" do
+    code_record = issue_code!
+    store = authorization_code_store
+    payload = store.read(code_record.code).merge(
+      "state" => "consumed",
+      "rp_session_ref" => "rp-session-for-replay",
+    )
+    store.instance_variable_get(:@connection).call(
+      "SET",
+      store.storage_key(code_record.code),
+      JSON.generate(payload),
+      "EX",
+      60,
+    )
+
+    result =
+      ClientRpSession.stub(:find_by, Object.new) do
+        RpSessionRevoker.stub(:call, ->(**) { raise ActiveRecord::ConnectionNotEstablished }) do
+          with_authenticated_client do
+            OidcTokenExchangeCoordinator.call(
+              grant_type: "authorization_code",
+              code: code_record.code,
+              redirect_uri: @redirect_uri,
+              client_id: "core-next-rp",
+              client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+              client_assertion: "test-client-assertion",
+              token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+              code_verifier: @code_verifier,
+            )
+          end
+        end
+      end
+
+    assert_not result.success?
+    assert_equal "server_error", result.error
+    assert_equal "authorization code replay revocation failed", result.error_description
+    assert_nil result.token_response
+    assert_equal "consumed", store.read(code_record.code).fetch("state")
+  end
+
+  test "preserves same-owner replay cleanup for a consumed code without auth_time" do
+    code_record = issue_code!
+    store = authorization_code_store
+    payload = store.read(code_record.code).except("auth_time").merge(
+      "state" => "consumed",
+      "rp_session_ref" => "rp-session-for-replay",
+    )
+    store.instance_variable_get(:@connection).call(
+      "SET",
+      store.storage_key(code_record.code),
+      JSON.generate(payload),
+      "EX",
+      60,
+    )
+
+    result =
+      ClientRpSession.stub(:find_by, Object.new) do
+        RpSessionRevoker.stub(:call, ->(**) { }) do
+          with_authenticated_client do
+            OidcTokenExchangeCoordinator.call(
+              grant_type: "authorization_code",
+              code: code_record.code,
+              redirect_uri: @redirect_uri,
+              client_id: "core-next-rp",
+              client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+              client_assertion: "test-client-assertion",
+              token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+              code_verifier: @code_verifier,
+            )
+          end
+        end
+      end
+
+    assert_not result.success?
+    assert_equal "invalid_grant", result.error
+    assert_equal "Authorization code already consumed", result.error_description
+  end
+
+  test "fails closed when consumed code family linkage does not succeed" do
+    code_record = issue_code!
+    delegate = authorization_code_store
+    missing_link = Struct.new(:status).new(:missing)
+    code_store = Object.new
+    code_store.define_singleton_method(:read) { |raw_code| delegate.read(raw_code) }
+    code_store.define_singleton_method(:consume!) do |**arguments|
+      delegate.consume!(**arguments)
+    end
+    code_store.define_singleton_method(:link_family!) { |**| missing_link }
+
+    result =
+      with_authenticated_client do
+        OidcTokenExchangeCoordinator.call(
+          grant_type: "authorization_code",
+          code: code_record.code,
+          redirect_uri: @redirect_uri,
+          client_id: "core-next-rp",
+          client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+          client_assertion: "test-client-assertion",
+          token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+          code_verifier: @code_verifier,
+          code_store: code_store,
+        )
+      end
+
+    assert_not result.success?
+    assert_equal "server_error", result.error
+    assert_nil result.token_response
+    assert_equal "consumed", delegate.read(code_record.code).fetch("state")
+  end
+
+  test "fails closed and rolls back the rp session when token issuance fails after consume" do
+    code_record = issue_code!
+    rp_session_count = ClientRpSession.count
+
+    result =
+      AuthenticationTokenService.stub(:encode, nil) do
+        with_authenticated_client do
+          OidcTokenExchangeCoordinator.call(
+            grant_type: "authorization_code",
+            code: code_record.code,
+            redirect_uri: @redirect_uri,
+            client_id: "core-next-rp",
+            client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+            client_assertion: "test-client-assertion",
+            token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+            code_verifier: @code_verifier,
+          )
+        end
+      end
+
+    assert_not result.success?
+    assert_equal "server_error", result.error
+    assert_equal "token issuance failed", result.error_description
+    assert_nil result.token_response
+    assert_equal rp_session_count, ClientRpSession.count
+    assert_equal "consumed", authorization_code_store.read(code_record.code).fetch("state")
   end
 
   test "fails for wrong redirect_uri" do
@@ -757,6 +938,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
+    assert_code_unconsumed(code_record)
   end
 
   test "fails for blank code_verifier" do
@@ -784,7 +966,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     code_record = issue_code!
 
     assert_no_difference "ClientToken.count" do
-      assert_difference "ClientTokenUsage.count", 1 do
+      assert_difference "ClientRpSession.count", 1 do
         with_authenticated_client do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -818,7 +1000,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = ClientOidcConnection.find_by!(user_id: @user.id, client_id: "core-next-rp")
-    usage = ClientTokenUsage.order(:created_at).last
+    usage = ClientRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_nil connection.revoked_at
@@ -898,15 +1080,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     org_redirect_uri = org_client.redirect_uris_by_realm.fetch("operator").first
     staff_secret_credential = "test_secret_credential_for_core_org"
 
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     result =
@@ -936,19 +1114,15 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     org_redirect_uri = org_client.redirect_uris_by_realm.fetch("operator").first
     staff_secret_credential = "test_secret_credential_for_core_org"
 
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     assert_no_difference "OperatorToken.count" do
-      assert_difference "OperatorTokenUsage.count", 1 do
+      assert_difference "OperatorRpSession.count", 1 do
         with_authenticated_org_client(staff_secret_credential) do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -970,15 +1144,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     staff_session_token = OperatorToken.create!(staff: staff)
     org_client = OidcClientRegistry.find("core-next-rp")
     staff_secret_credential = "test_secret_credential_for_core_org"
-    code_record = OperatorAuthorizationCode.issue!(
-      staff: staff,
-      operator_token: staff_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: org_client.redirect_uris_by_realm.fetch("operator").first,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "staff_nonce",
-      scope: "openid profile email",
+      resource: staff,
+      session_token: staff_session_token,
     )
 
     with_authenticated_org_client(staff_secret_credential) do
@@ -995,7 +1165,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = OperatorOidcConnection.find_by!(staff_id: staff.id, client_id: "core-next-rp")
-    usage = OperatorTokenUsage.order(:created_at).last
+    usage = OperatorRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_equal staff_session_token.id, usage.operator_token_id
@@ -1010,15 +1180,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     com_redirect_uri = com_client.redirect_uris_by_realm.fetch("visitor").first
     visitor_secret_credential = "test_secret_credential_for_core_com"
 
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     result =
@@ -1048,19 +1214,15 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     com_redirect_uri = com_client.redirect_uris_by_realm.fetch("visitor").first
     visitor_secret_credential = "test_secret_credential_for_core_com"
 
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     assert_no_difference "VisitorToken.count" do
-      assert_difference "VisitorTokenUsage.count", 1 do
+      assert_difference "VisitorRpSession.count", 1 do
         with_authenticated_com_client(visitor_secret_credential) do
           OidcTokenExchangeCoordinator.call(
             grant_type: "authorization_code",
@@ -1082,15 +1244,11 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     visitor_session_token = VisitorToken.create!(visitor: visitor, visitor_token_kind_id: VisitorTokenKind::BROWSER_WEB)
     com_client = OidcClientRegistry.find("core-next-rp")
     visitor_secret_credential = "test_secret_credential_for_core_com"
-    code_record = VisitorAuthorizationCode.issue!(
-      visitor: visitor,
-      visitor_token: visitor_session_token,
+    code_record = issue_code!(
       client_id: "core-next-rp",
       redirect_uri: com_client.redirect_uris_by_realm.fetch("visitor").first,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
-      nonce: "visitor_nonce",
-      scope: "openid profile email",
+      resource: visitor,
+      session_token: visitor_session_token,
     )
 
     with_authenticated_com_client(visitor_secret_credential) do
@@ -1107,7 +1265,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     end
 
     connection = VisitorOidcConnection.find_by!(visitor_id: visitor.id, client_id: "core-next-rp")
-    usage = VisitorTokenUsage.order(:created_at).last
+    usage = VisitorRpSession.order(:created_at).last
 
     assert_equal "openid profile email", connection.scope
     assert_equal visitor_session_token.id, usage.visitor_token_id
@@ -1145,7 +1303,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     ClientToken.last
 
-    assert_predicate ClientTokenUsage.last.dpop_jkt, :present?
+    assert_predicate ClientRpSession.last.dpop_jkt, :present?
   end
 
   test "issues Bearer token when no DPoP proof is provided" do
@@ -1167,7 +1325,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_predicate result, :success?
     assert_equal "Bearer", result.token_response[:token_type]
-    assert_nil ClientTokenUsage.last.dpop_jkt
+    assert_nil ClientRpSession.last.dpop_jkt
   end
 
   test "fails when DPoP proof has wrong htm" do
@@ -1194,6 +1352,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
+    assert_code_unconsumed(code_record)
   end
 
   test "fails when DPoP proof has wrong htu" do
@@ -1219,6 +1378,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
+    assert_code_unconsumed(code_record)
   end
 
   test "issues OIDC tokens with URL issuer public subject and split audiences" do
@@ -1265,7 +1425,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
     assert_equal OidcSubject.for(@user, resource_type: "client"), access_token.fetch("sub")
     assert_equal [@client.aud], Array(access_token.fetch("aud"))
     assert_equal "core-next-rp", access_token.fetch("client_id")
-    assert_equal %w(openid profile), access_token.fetch("scp")
+    assert_equal "openid profile", access_token.fetch("scope")
     assert_predicate access_token.fetch("auth_time"), :present?
 
     base_kids = JitSecurityJwtRegistry.jwks_for("surface:BASE_APP").fetch(:keys).map { |key| key.fetch("kid") }
@@ -1274,6 +1434,64 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_includes base_kids, access_header.fetch("kid")
     assert_includes base_kids, id_header.fetch("kid")
+  end
+
+  test "preserves an authentication event time that predates authorization-code issuance" do
+    auth_time = Time.utc(2026, 1, 2, 3, 4, 5)
+    issued_at = auth_time + 5.minutes
+    code_record = plant_authorization_code!(auth_time: auth_time, issued_at: issued_at)
+
+    result =
+      with_authenticated_client do
+        OidcTokenExchangeCoordinator.call(
+          grant_type: "authorization_code",
+          code: code_record.code,
+          redirect_uri: @redirect_uri,
+          client_id: "core-next-rp",
+          client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+          client_assertion: "test-client-assertion",
+          token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+          code_verifier: @code_verifier,
+        )
+      end
+
+    assert_predicate result, :success?
+    access_token = AuthenticationTokenService.decode(
+      result.token_response.fetch(:access_token),
+      host: OidcIssuer.host_for_client(@client),
+      resource_type: "client",
+      issuer: OidcIssuer.for_client(@client),
+      audiences: [@client.aud],
+      jwt_issuer_id: OidcIssuer.jwt_issuer_id_for_client(@client),
+    )
+    id_token = JWT.decode(result.token_response.fetch(:id_token), nil, false).first
+
+    assert_equal auth_time.to_i, access_token.fetch("auth_time")
+    assert_equal auth_time.to_i, id_token.fetch("auth_time")
+    assert_operator issued_at.to_i, :>, access_token.fetch("auth_time")
+  end
+
+  test "rejects an authorization code without an authentication event time before consuming it" do
+    code_record = plant_authorization_code!(auth_time: nil)
+
+    result =
+      with_authenticated_client do
+        OidcTokenExchangeCoordinator.call(
+          grant_type: "authorization_code",
+          code: code_record.code,
+          redirect_uri: @redirect_uri,
+          client_id: "core-next-rp",
+          client_assertion_type: OidcClientAssertionJwt::ASSERTION_TYPE,
+          client_assertion: "test-client-assertion",
+          token_endpoint_uri: "https://log.umaxica.app/oauth/token",
+          code_verifier: @code_verifier,
+        )
+      end
+
+    assert_not result.success?
+    assert_equal "invalid_grant", result.error
+    assert_equal "Authorization code authentication time missing", result.error_description
+    assert_code_unconsumed(code_record)
   end
 
   test "token exchange rejects a 42 character PKCE verifier one below the RFC 7636 minimum" do
@@ -1305,8 +1523,13 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
   end
 
   test "token exchange rejects a code_challenge_method of plain even with a matching verifier" do
-    code_record = issue_code!(scope: "openid profile")
-    code_record.update_columns(code_challenge_method: "plain")
+    code_record = plant_authorization_code!(
+      client_id: "core-next-rp",
+      redirect_uri: @redirect_uri,
+      code_challenge: @code_challenge,
+      code_challenge_method: "plain",
+      scope: "openid profile",
+    )
 
     result =
       with_authenticated_client do
@@ -1324,7 +1547,7 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
   test "public palm audience exchange issues access token accepted by palm resource server" do
@@ -1399,17 +1622,85 @@ class OidcTokenExchangeCoordinatorTest < ActiveSupport::TestCase
 
     assert_not result.success?
     assert_equal "invalid_request", result.error
-    assert_not_predicate code_record.reload, :consumed?
+    assert_code_unconsumed(code_record)
   end
 
-  def issue_code!(client_id: "core-next-rp", redirect_uri: @redirect_uri, scope: "openid profile email")
-    ClientAuthorizationCode.issue!(
-      user: @user,
-      client_token: @user_session_token,
-      client_id: client_id,
+  def issue_code!(client_id: "core-next-rp", redirect_uri: @redirect_uri, scope: "openid profile email",
+                  resource: nil, session_token: nil)
+    resource ||= @user
+    session_token ||= @user_session_token
+    OidcAuthorizationCodeIssuer.call(
+      client: OidcClientRegistry.find(client_id) || visitor_account(
+        client_id: client_id,
+        redirect_uris: [redirect_uri],
+      ),
+      params: {
+        client_id: client_id,
+        redirect_uri: redirect_uri,
+        code_challenge: @code_challenge,
+        code_challenge_method: "S256",
+        nonce: "test_nonce",
+        scope: scope,
+      },
+      resource: resource,
+      session_token: session_token,
+      authentication_event_at: Time.utc(2026, 1, 2, 3, 4, 5),
+    )
+  end
+
+  def authorization_code_store
+    Valkey::AuthState::AuthorizationCodeStore.new
+  end
+
+  def consume_issued_code!(code_record)
+    authorization_code_store.consume!(
+      raw_code: code_record.code,
+      expected: {
+        client_id: code_record.client_id,
+        redirect_uri: code_record.redirect_uri,
+      },
+    )
+  end
+
+  def assert_code_unconsumed(code_record)
+    payload = authorization_code_store.read(code_record.code)
+
+    assert_not_nil payload
+    assert_equal "issued", payload.fetch("state")
+  end
+
+  def plant_authorization_code!(client_id:, redirect_uri:, code_challenge:, code_challenge_method:,
+                                scope: "openid profile email", resource: nil, session_token: nil,
+                                auth_time: Time.current, issued_at: Time.current)
+    resource ||= @user
+    session_token ||= @user_session_token
+    store = authorization_code_store
+    # Bypass issue! S256 guard to plant defense-in-depth exchange cases.
+    raw_code = SecureRandom.urlsafe_base64(32, padding: false)
+    payload = {
+      "version" => 1,
+      "state" => "issued",
+      "client_id" => client_id.to_s,
+      "redirect_uri" => redirect_uri.to_s,
+      "subject" => OidcSubject.for(resource, resource_type: "client"),
+      "base_session_ref" => session_token.public_id,
+      "code_challenge" => code_challenge.to_s,
+      "code_challenge_method" => code_challenge_method.to_s,
+      "nonce" => "test_nonce",
+      "scope" => scope,
+      "auth_time" => auth_time&.iso8601,
+      "resource_type" => "client",
+      "issued_at" => issued_at.iso8601,
+      "expires_at" => (issued_at + Valkey::AuthState::AuthorizationCodeStore::CODE_TTL).iso8601,
+    }.compact
+    key = store.storage_key(raw_code)
+    store.instance_variable_get(:@connection).call("SET", key, JSON.generate(payload), "EX", 60)
+    OidcIssuedAuthorizationCode.new(
+      code: raw_code,
       redirect_uri: redirect_uri,
-      code_challenge: @code_challenge,
-      code_challenge_method: "S256",
+      state: nil,
+      resource_type: "client",
+      client_id: client_id,
       nonce: "test_nonce",
       scope: scope,
     )

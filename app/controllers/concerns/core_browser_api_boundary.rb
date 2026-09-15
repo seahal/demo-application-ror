@@ -91,7 +91,9 @@ module CoreBrowserApiBoundary
     end
 
     resource = result.token.public_send(core_token_resource_method)
-    access_expires_at = CoreBrowserCredentialContract::ACCESS_TTL.from_now
+    access_expires_at = CoreBrowserCredentialContract.access_token_expires_at_for(
+      token_record: result.token,
+    )
     access_token = CoreBrowserCredentialContract.encode_access_token(
       resource: resource,
       token_record: result.token,
@@ -110,7 +112,7 @@ module CoreBrowserApiBoundary
     # `{"ok": true}` placeholder. The previous 200 with `{"refreshed": true}` was justified in a
     # comment here by the claim that the Next.js edge application read that key; an audit of
     # `seahal/umaxica-apps-edge` on 2026-08-22 found it forwards `/api/v0/*` without parsing it and
-    # has no reader for the key. See decision D14 in plans/rails-nextjs-openapi-contract-audit.md.
+    # has no reader for the key. See decision D14 in plans/analysis/rails-nextjs-openapi-contract-audit.md.
     head :no_content
   end
 

@@ -5,24 +5,20 @@ require "test_helper"
 # require "helpers/global_test_support"
 
 class OidcRpLogoutReceiversTest < ActionDispatch::IntegrationTest
+  # Auth is ceremony-only (no RP backchannel). Cover the routed first-party RP
+  # receivers: Core app/com/org and Edit org.
   SURFACES = [
-    { host: ENV.fetch("PRIVATE_AUTH_SERVICE_URL", "auth.app.localhost"),
-      client_id: "sign-rp",
-      resource_type: "client", },
-    { host: ENV.fetch("PRIVATE_AUTH_CORPORATE_URL", "sign.com.localhost"),
-      client_id: "sign-rp",
-      resource_type: "visitor", },
-    { host: ENV.fetch("PRIVATE_AUTH_STAFF_URL", "sign.org.localhost"),
-      client_id: "sign-rp",
-      resource_type: "operator", },
     { host: ENV.fetch("PUBLIC_CORE_SERVICE_URL", "core.app.localhost"),
-      client_id: "core-next-rp",
+      client_id: "core-app",
       resource_type: "client", },
     { host: ENV.fetch("PUBLIC_CORE_CORPORATE_URL", "core.com.localhost"),
-      client_id: "core-next-rp",
+      client_id: "core-com",
       resource_type: "visitor", },
     { host: ENV.fetch("PUBLIC_CORE_STAFF_URL", "core.org.localhost"),
-      client_id: "core-next-rp",
+      client_id: "core-org",
+      resource_type: "operator", },
+    { host: ENV.fetch("PUBLIC_EDIT_STAFF_URL", "edit.umaxica.org"),
+      client_id: "edit-org",
       resource_type: "operator", },
   ].freeze
 
@@ -263,6 +259,7 @@ class OidcRpLogoutReceiversTest < ActionDispatch::IntegrationTest
   def forge_logout_token(surface, payload:)
     JitSecurityJwtKeyring.encode(
       payload,
+      typ: payload["typ"].presence || OidcLogoutTokenCodec::TOKEN_TYPE,
       issuer_id: OidcIssuer.jwt_issuer_id_for_resource_type(surface.fetch(:resource_type)),
     )
   end

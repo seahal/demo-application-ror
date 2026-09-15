@@ -39,6 +39,33 @@ class Auth::App::Sign::Up::Check::Email::OtpsControllerTest < ActionDispatch::In
     assert_equal I18n.t("sign.app.authentication.email.edit.page_title"), props.fetch("title")
     assert_equal I18n.t("sign.app.authentication.email.edit.code_label"), props.fetch("code_label")
     assert_equal I18n.t("sign.app.authentication.email.edit.submit"), props.fetch("submit_label")
+    assert_equal "render", props.fetch("turnstile").fetch("mode")
+    assert_predicate props.fetch("turnstile").fetch("site_key"), :present?
+    assert_predicate props.fetch("turnstile").fetch("challenge_id"), :present?
+  end
+
+  test "patch with a valid otp and missing, invalid, or unavailable Turnstile does not consume the otp" do
+    user_email = start_email_signup!("email-turnstile@example.com")
+    cycle = current_sign_up_cycle
+    attempts_before = user_email.reload.otp_attempts_count
+    [
+      [nil, { "success" => false }],
+      ["invalid-turnstile-token", { "success" => false }],
+      ["provider-outage-token", { "success" => false, "unavailable" => true }],
+    ].each do |turnstile_token, verification_result|
+      TurnstileVerifierStub.challenge_response = verification_result
+      params = { client_email: { pass_code: otp_code_for(user_email) } }
+      params["cf-turnstile-response"] = turnstile_token if turnstile_token
+
+      patch auth_app_sign_up_check_email_otp_url(ri: "jp"), params: params, headers: default_headers
+
+      assert_response :unprocessable_content
+      assert_equal "render", inertia_props.fetch("turnstile").fetch("mode")
+    end
+
+    assert_equal attempts_before, user_email.reload.otp_attempts_count
+    assert_equal ClientSignUpFlowStatus::CONTACT_PENDING, cycle.reload.status_id
+    assert_nil cycle.completed_requirements["otp"]
   end
 
   test "patch with a valid otp advances to the birthdate checkpoint" do
@@ -46,7 +73,10 @@ class Auth::App::Sign::Up::Check::Email::OtpsControllerTest < ActionDispatch::In
     cycle = current_sign_up_cycle
 
     patch auth_app_sign_up_check_email_otp_url(ri: "jp"),
-          params: { client_email: { pass_code: otp_code_for(user_email) } },
+          params: {
+            "client_email" => { "pass_code" => otp_code_for(user_email) },
+            "cf-turnstile-response" => "valid-turnstile-token",
+          },
           headers: default_headers
 
     assert_response :redirect

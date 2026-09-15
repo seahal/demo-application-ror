@@ -105,7 +105,10 @@ module OidcAuthorizationTransactionable
     }
   end
 
-  def register_authentication!(actor_ref:, session_ref:, auth_method:, acr:, now: Time.current)
+  def register_authentication!(actor_ref:, session_ref:, auth_method:, acr:, authentication_event_at: nil,
+                               now: Time.current)
+    raise ArgumentError, "authentication event time is required" if authentication_event_at.blank?
+
     self.class.connection_owner.connected_to(role: :writing) do
       self.class.transaction do
         locked = self.class.lock.find(id)
@@ -118,7 +121,7 @@ module OidcAuthorizationTransactionable
           session_ref: session_ref.to_s,
           auth_method: auth_method.to_s,
           acr: acr.to_s.presence || "aal1",
-          authenticated_at: now,
+          authenticated_at: authentication_event_at,
           status: STATUS_AUTHENTICATED,
         )
         locked

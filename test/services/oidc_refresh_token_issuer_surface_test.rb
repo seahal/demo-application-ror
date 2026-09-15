@@ -26,7 +26,7 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
     connection = OperatorOidcConnection.create!(
       staff: operator, client_id: "org-console-rp", last_used_at: 3.days.ago,
     )
-    usage = OperatorTokenUsage.create!(operator_token: token, oidc_client_id: "org-console-rp")
+    usage = OperatorRpSession.create!(operator_token: token, oidc_client_id: "org-console-rp")
     refresh_token = usage.issue_refresh_token!
 
     result = OidcRefreshTokenIssuer.call(refresh_token: refresh_token)
@@ -44,7 +44,7 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       discarded_at: 1.day.from_now,
     )
-    usage = OperatorTokenUsage.create!(operator_token: token, oidc_client_id: "org-console-rp")
+    usage = OperatorRpSession.create!(operator_token: token, oidc_client_id: "org-console-rp")
     replayed = usage.issue_refresh_token!
 
     assert_predicate OidcRefreshTokenIssuer.call(refresh_token: replayed), :success?
@@ -60,6 +60,17 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
     assert_predicate usage.reload, :revoked?
     assert_equal [["refresh_reuse_detected", { staff_id: operator.id, user_token_id: usage.public_id }]],
                  emitted
+    audit =
+      ChronicleRecord.connected_to(role: :writing) do
+        OperatorChronicle.where(
+          event_id: OperatorChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED,
+          subject_id: operator.id.to_s,
+          subject_type: "Operator",
+        ).order(occurred_at: :desc).first
+      end
+
+    assert_predicate audit, :present?
+    assert_equal "rp_session_revoked", audit.context.deep_stringify_keys.fetch("result")
   end
 
   test "a visitor refresh token rotates and touches the visitor connection" do
@@ -73,7 +84,7 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
     connection = VisitorOidcConnection.create!(
       visitor: visitor, client_id: "com-portal-rp", last_used_at: 3.days.ago,
     )
-    usage = VisitorTokenUsage.create!(visitor_token: token, oidc_client_id: "com-portal-rp")
+    usage = VisitorRpSession.create!(visitor_token: token, oidc_client_id: "com-portal-rp")
     refresh_token = usage.issue_refresh_token!
 
     result = OidcRefreshTokenIssuer.call(refresh_token: refresh_token)
@@ -91,7 +102,7 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
       visitor_token_status_id: VisitorTokenStatus::ACTIVE,
       discarded_at: 1.day.from_now,
     )
-    usage = VisitorTokenUsage.create!(visitor_token: token, oidc_client_id: "com-portal-rp")
+    usage = VisitorRpSession.create!(visitor_token: token, oidc_client_id: "com-portal-rp")
     replayed = usage.issue_refresh_token!
 
     assert_predicate OidcRefreshTokenIssuer.call(refresh_token: replayed), :success?
@@ -107,5 +118,16 @@ class OidcRefreshTokenIssuerSurfaceTest < ActiveSupport::TestCase
     assert_predicate usage.reload, :revoked?
     assert_equal [["refresh_reuse_detected", { visitor_id: visitor.id, user_token_id: usage.public_id }]],
                  emitted
+    audit =
+      ChronicleRecord.connected_to(role: :writing) do
+        ClientChronicle.where(
+          event_id: ClientChronicleEvent::REFRESH_TOKEN_REUSE_DETECTED,
+          subject_id: visitor.id.to_s,
+          subject_type: "Visitor",
+        ).order(occurred_at: :desc).first
+      end
+
+    assert_predicate audit, :present?
+    assert_equal "rp_session_revoked", audit.context.deep_stringify_keys.fetch("result")
   end
 end
