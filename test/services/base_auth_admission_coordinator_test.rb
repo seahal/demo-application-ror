@@ -39,6 +39,7 @@ class BaseAuthAdmissionCoordinatorTest < ActiveSupport::TestCase
       actor: clients(:one),
       session_ref: "session-ref",
       auth_method: "passkey",
+      authentication_event_at: Time.utc(2026, 1, 2, 3, 4, 5),
     )
     issuance = BaseAuthAdmissionCoordinator.issue_result!(transaction: transaction.reload)
 

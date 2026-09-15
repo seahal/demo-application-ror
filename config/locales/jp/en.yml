@@ -2369,6 +2369,9 @@ en:
             ignore_instruction: If you did not request this, please ignore this email.
             instruction: "Please use the following verification code to complete your registration:"
             subject: Your verification code
+            subjects:
+              sign_in: UMAXICA - Confirm your sign-in
+              sign_up: UMAXICA - Verify your email address
             title: Verify your email address
             verify_link: Verify email
       com:
@@ -2378,6 +2381,9 @@ en:
             ignore_instruction: If you did not request this, please ignore this email.
             instruction: "Please use the following verification code to continue:"
             subject: Your verification code
+            subjects:
+              sign_in: UMAXICA - Confirm your sign-in
+              sign_up: UMAXICA - Verify your email address
             title: Verify your email address
             verify_link: Verify email
       org:

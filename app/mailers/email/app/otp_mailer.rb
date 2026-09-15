@@ -7,6 +7,11 @@ module Email::App
 
     layout "email/application"
 
+    OTP_SUBJECT_KEYS = {
+      "sign_up" => "mail.email.app.otp_mailer.create.subjects.sign_up",
+      "sign_in" => "mail.email.app.otp_mailer.create.subjects.sign_in",
+    }.freeze
+
     def create
       @pass_code = OutboundSensitivePayload.decrypt_email_otp(params[:encrypted_hotp_token])
       @verification_token = params[:verification_token]
@@ -15,11 +20,19 @@ module Email::App
 
       mail(
         to: params[:email_address],
-        subject: I18n.t("mail.email.app.otp_mailer.create.subject"),
+        subject: otp_subject,
       )
     end
 
     private
+
+    def otp_subject
+      purpose = params[:purpose].to_s
+      subject_key = OTP_SUBJECT_KEYS[purpose]
+      return I18n.t(subject_key) if subject_key
+
+      I18n.t("mail.email.app.otp_mailer.create.subject")
+    end
 
     def verification_url
       return if @verification_token.blank? || @public_id.blank?

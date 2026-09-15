@@ -169,7 +169,10 @@ Rails.application.configure do
 
   # Use Solid Queue in Development.
   config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
+  # `reading` is mapped to the same `queue` database, not a replica: the queue database has no
+  # replica entry in config/database.yml, and Mission Control Jobs reads the queue through the
+  # reading role, which raises ConnectionNotDefined when only `writing` is declared.
+  config.solid_queue.connects_to = { database: { writing: :queue, reading: :queue } }
 
   # Enable Gzip compression
   config.middleware.use(Rack::Deflater)

@@ -273,7 +273,12 @@ module SignEmailRegistrable
       otp_code: otp_number,
       verification_token: token,
       public_id: @user_email.public_id,
+      purpose: email_otp_purpose,
     )
+  end
+
+  def email_otp_purpose
+    nil
   end
 
   def dummy_existing_email_session_payload

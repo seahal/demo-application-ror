@@ -108,6 +108,7 @@ module RefreshTokenable
       copy_attribute_if_present(attrs, previous_token, :oidc_client_id)
       copy_attribute_if_present(attrs, previous_token, :oidc_scope)
       copy_attribute_if_present(attrs, previous_token, :oidc_sid)
+      copy_attribute_if_present(attrs, previous_token, :authentication_event_at)
 
       actor_key = actor_foreign_key_from(previous_token)
       token_status_key = token_status_key_from(previous_token)

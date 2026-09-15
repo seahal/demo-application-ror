@@ -25,6 +25,7 @@ class OidcAuthorizationTransactionableTest < ActiveSupport::TestCase
 
   test "register_authentication! and consume! advance the transaction state" do
     now = Time.zone.local(2026, 6, 19, 14, 0, 0)
+    authentication_event_at = now - 5.minutes
     transaction = create_transaction(VisitorOidcAuthorizationTransaction, surface: "com")
 
     travel_to now do
@@ -33,11 +34,13 @@ class OidcAuthorizationTransactionableTest < ActiveSupport::TestCase
         session_ref: "session-1",
         auth_method: "pwd",
         acr: "",
+        authentication_event_at: authentication_event_at,
       )
 
       assert_predicate transaction, :authenticated?
       assert_equal "aal1", transaction.acr
       assert_equal "visitor-1", transaction.actor_ref
+      assert_equal authentication_event_at, transaction.authenticated_at
 
       transaction = transaction.consume!
 
@@ -57,6 +60,7 @@ class OidcAuthorizationTransactionableTest < ActiveSupport::TestCase
           session_ref: "session-1",
           auth_method: "pwd",
           acr: "aal2",
+          authentication_event_at: Time.utc(2026, 1, 2, 3, 4, 5),
         )
       end
     assert_match(/expired/, error.message)
@@ -67,6 +71,7 @@ class OidcAuthorizationTransactionableTest < ActiveSupport::TestCase
       session_ref: "session-1",
       auth_method: "pwd",
       acr: "aal2",
+      authentication_event_at: Time.utc(2026, 1, 2, 3, 4, 5),
     )
     transaction.consume!
 

@@ -4,7 +4,9 @@
 module AuthenticationJwtTokens
   extend ActiveSupport::Concern
 
-  def encode_login_access_token(resource, token_record, token_kind_id:, dpop_jkt:, access_expires_at:)
+  def encode_login_access_token(
+    resource, token_record, token_kind_id:, dpop_jkt:, access_expires_at:, authentication_event_at: nil
+  )
     AuthenticationToken.encode(
       resource,
       host: request.host,
@@ -19,6 +21,7 @@ module AuthenticationJwtTokens
       ),
       acr: "aal1",
       amr: normalize_amr(token_kind_id, token_record: token_record),
+      auth_time: authentication_event_at || token_record_authentication_event_at(token_record),
       jwt_issuer_id: auth_jwt_issuer_id,
       authentication_context: token_record_authentication_context(token_record),
     )
@@ -41,6 +44,7 @@ module AuthenticationJwtTokens
       ),
       acr: "aal1",
       amr: nil,
+      auth_time: token_record_authentication_event_at(token_record) || current_authentication_event_at_for_token,
       jwt_issuer_id: auth_jwt_issuer_id,
       authentication_context: token_record_authentication_context(token_record),
     )
@@ -68,6 +72,18 @@ module AuthenticationJwtTokens
     return nil unless token_record.respond_to?(:authentication_context_value)
 
     token_record.authentication_context_value.to_s
+  end
+
+  def token_record_authentication_event_at(token_record)
+    return nil unless token_record&.respond_to?(:authentication_event_at)
+
+    token_record.authentication_event_at
+  end
+
+  def current_authentication_event_at_for_token
+    return unless respond_to?(:current_authentication_event_at, true)
+
+    current_authentication_event_at
   end
 
   def token_record_oidc_sid(token_record)
@@ -118,6 +134,7 @@ module AuthenticationJwtTokens
       resource_type: resource_type,
       dpop_jkt: token_record_attribute(current_session, :dpop_jkt),
       expires_at: access_expires_at,
+      auth_time: token_record_authentication_event_at(current_session) || current_authentication_event_at_for_token,
       jwt_issuer_id: auth_jwt_issuer_id,
       authentication_context: token_record_authentication_context(current_session),
     )

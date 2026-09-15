@@ -146,6 +146,7 @@ module Auth
           session_ref: current_session_public_id,
           auth_method: Array(Actor.authn.access_claims&.dig("amr")).first || "unknown",
           acr: Actor.authn.access_claims&.dig("acr"),
+          authentication_event_at: current_authentication_event_at,
         )
       end
 

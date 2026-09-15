@@ -93,6 +93,12 @@ class OidcIdTokenVerifierTest < ActiveSupport::TestCase
     assert_invalid token_with_claims("nbf" => 10.minutes.from_now.to_i)
   end
 
+  test "rejects an authentication time beyond the configured clock leeway" do
+    future_auth_time = Time.current.to_i + AuthenticationJwtConfiguration.leeway_seconds + 1
+
+    assert_invalid token_with_claims("auth_time" => future_auth_time)
+  end
+
   private
 
   def id_token(issuer: @issuer, issued_at: Time.current.utc, expires_at: 5.minutes.from_now)

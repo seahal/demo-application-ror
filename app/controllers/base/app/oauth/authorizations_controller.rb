@@ -66,7 +66,7 @@ module Base
           )
         end
 
-        def issue_authorization_code!(resource, params_hash: authorize_params)
+        def issue_authorization_code!(resource, params_hash: authorize_params, authentication_event_at: nil)
           access_claims = Actor.authn.access_claims
           result = ::OidcAuthorizeCoordinator.call(
             params: params_hash,
@@ -74,6 +74,7 @@ module Base
             session_token: current_session,
             auth_method: Array(access_claims&.dig("amr")).first,
             acr: access_claims&.dig("acr"),
+            authentication_event_at: authentication_event_at || current_authentication_event_at,
           )
 
           if result.success?
@@ -135,6 +136,7 @@ module Base
                 require_totp_check: false,
                 audit_context: { oidc_client_id: transaction.client_id },
                 bootstrap_actor: true,
+                authentication_event_at: transaction.authenticated_at,
               )
             end
           return redirect_to_session_limitation!(
@@ -147,7 +149,11 @@ module Base
           ) unless login_result[:status] == :success
 
           transaction.consume!
-          issue_authorization_code!(resource, params_hash: transaction.authorize_params)
+          issue_authorization_code!(
+            resource,
+            params_hash: transaction.authorize_params,
+            authentication_event_at: transaction.authenticated_at,
+          )
         end
 
         def redirect_to_session_limitation!(resource, transaction)

@@ -137,6 +137,8 @@ module Auth
 
           def sign_up_surface = :com
 
+          def email_otp_purpose = :sign_up
+
           # The registration form. `pt` travels in the generated action URL rather than as a prop,
           # so the signed target never becomes page data the browser holds separately.
           def render_sign_up_email_new(status: :ok)
@@ -208,6 +210,7 @@ module Auth
               code_placeholder: t("sign.app.authentication.email.edit.code_placeholder"),
               submit_label: t("sign.app.authentication.email.edit.submit"),
               delivery_help: t("sign.app.authentication.email.edit.delivery_help"),
+              turnstile: turnstile_visible_props(challenge_id: SecureRandom.uuid),
               error_heading: nil,
               errors: sign_up_email_errors,
               return_link: {
@@ -369,6 +372,7 @@ module Auth
               OtpAdapter.for(surface: :com, channel: :email).deliver(
                 record: @user_email,
                 otp_code: otp_number,
+                purpose: :sign_up,
                 verification_token: token, public_id: @user_email.public_id,
               )
 

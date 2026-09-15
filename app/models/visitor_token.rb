@@ -28,6 +28,7 @@
 #  rotated_at                         :datetime
 #  selected_at                        :datetime
 #  created_at                         :datetime         not null
+#  authentication_event_at            :datetime
 #  updated_at                         :datetime         not null
 #  dbsc_session_id                    :string
 #  device_session_id                  :bigint

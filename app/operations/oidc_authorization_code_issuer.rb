@@ -3,6 +3,7 @@
 
 class OidcAuthorizationCodeIssuer < ApplicationService
   def initialize(client:, params:, resource:, session_token:, auth_method: nil, acr: nil,
+                 authentication_event_at: nil,
                  store: Valkey::AuthState::AuthorizationCodeStore.new)
     super()
     @client = client
@@ -11,6 +12,7 @@ class OidcAuthorizationCodeIssuer < ApplicationService
     @session_token = session_token
     @auth_method = auth_method
     @acr = acr
+    @authentication_event_at = authentication_event_at
     @store = store
   end
 
@@ -25,7 +27,7 @@ class OidcAuthorizationCodeIssuer < ApplicationService
       code_challenge_method: params[:code_challenge_method],
       nonce: params[:nonce],
       scope: params[:scope],
-      auth_time: Time.current,
+      auth_time: required_authentication_event_at,
       resource_type: resource_type,
       acr: acr,
       amr: auth_method,
@@ -44,7 +46,13 @@ class OidcAuthorizationCodeIssuer < ApplicationService
 
   private
 
-  attr_reader :client, :params, :resource, :session_token, :auth_method, :acr
+  attr_reader :client, :params, :resource, :session_token, :auth_method, :acr, :authentication_event_at
+
+  def required_authentication_event_at
+    return authentication_event_at if authentication_event_at.present?
+
+    raise ArgumentError, "authentication event time is required"
+  end
 
   def validate_session_token!
     raise ArgumentError, "session_token is required" if session_token.blank?

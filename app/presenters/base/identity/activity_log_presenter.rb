@@ -87,7 +87,7 @@ module Base
         activity_key_str = "base.shared.identity.activities.events.#{activity_key(activity, values)}"
         risk_key_str = "base.shared.identity.activities.risks.#{risk}"
         {
-          occurred_at: localized_session_timestamp(activity.occurred_at || activity.created_at),
+          occurred_at: localized_session_timestamp(activity.occurred_at),
           activity: I18n.t(activity_key_str),
           device: device_summary(activity),
           source: I18n.t("base.shared.identity.activities.unknown_location"),

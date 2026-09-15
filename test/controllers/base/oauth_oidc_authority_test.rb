@@ -561,6 +561,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
             user_token_status_id: ClientTokenStatus::ACTIVE,
             user_token_binding_method_id: ClientTokenBindingMethod::LEGACY,
             user_token_dbsc_status_id: ClientTokenDbscStatus::NOTHING,
+            authentication_event_at: Time.current,
           )
         end,
         transaction_class: ClientOidcAuthorizationTransaction,
@@ -580,6 +581,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
             staff_token_status_id: OperatorTokenStatus::ACTIVE,
             staff_token_binding_method_id: OperatorTokenBindingMethod::LEGACY,
             staff_token_dbsc_status_id: OperatorTokenDbscStatus::NOTHING,
+            authentication_event_at: Time.current,
           )
         end,
         transaction_class: OperatorOidcAuthorizationTransaction,
@@ -599,6 +601,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
             visitor_token_status_id: VisitorTokenStatus::ACTIVE,
             visitor_token_binding_method_id: VisitorTokenBindingMethod::LEGACY,
             visitor_token_dbsc_status_id: VisitorTokenDbscStatus::NOTHING,
+            authentication_event_at: Time.current,
           )
         end,
         transaction_class: VisitorOidcAuthorizationTransaction,
@@ -683,6 +686,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
       surface: "app",
       login_challenge: issuance.transaction.login_challenge,
       actor: clients(:one),
+      authentication_event_at: Time.current,
       session_ref: "session-1",
       auth_method: "passkey",
     )
@@ -718,6 +722,7 @@ class BaseOauthOidcAuthorityTest < ActionDispatch::IntegrationTest
       surface: "app",
       login_challenge: issuance.transaction.login_challenge,
       actor: clients(:one),
+      authentication_event_at: Time.current,
       session_ref: "session-1",
       auth_method: "passkey",
     )
@@ -902,6 +907,7 @@ class BaseOauthOidcAuthorityTest
       user_token_status_id: ClientTokenStatus::ACTIVE,
       user_token_binding_method_id: ClientTokenBindingMethod::LEGACY,
       user_token_dbsc_status_id: ClientTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     access_token = jwt_access_token_for(user, host: host, session_public_id: token.public_id, resource_type: "client")
@@ -930,6 +936,7 @@ class BaseOauthOidcAuthorityTest
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       staff_token_binding_method_id: OperatorTokenBindingMethod::LEGACY,
       staff_token_dbsc_status_id: OperatorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     access_token = jwt_access_token_for(
@@ -961,6 +968,7 @@ class BaseOauthOidcAuthorityTest
       visitor_token_status_id: VisitorTokenStatus::ACTIVE,
       visitor_token_binding_method_id: VisitorTokenBindingMethod::LEGACY,
       visitor_token_dbsc_status_id: VisitorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     access_token = jwt_access_token_for(

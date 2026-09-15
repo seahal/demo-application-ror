@@ -338,6 +338,30 @@ module AuthenticationBase
     @current_session_public_id ||= current_session_public_id_from_access_token
   end
 
+  # Returns only an explicitly issued authentication-event timestamp.  A token
+  # or session's persistence timestamps are not equivalent to the credential
+  # event and must never be promoted into OIDC auth_time.
+  def current_authentication_event_at
+    raw = defined?(Actor) ? Actor.authn.access_claims&.dig("auth_time") : nil
+    return parse_authentication_event_at(raw) if raw.present?
+
+    token = respond_to?(:current_session, true) ? current_session : nil
+    return token.authentication_event_at if token&.respond_to?(:authentication_event_at)
+
+    nil
+  end
+
+  def parse_authentication_event_at(raw)
+    return raw if raw.is_a?(Time) || raw.is_a?(ActiveSupport::TimeWithZone)
+    return Time.at(raw).utc if raw.is_a?(Numeric)
+
+    Time.at(Integer(raw, 10)).utc
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  private :current_authentication_event_at, :parse_authentication_event_at
+
   def current_resource
     actor_resource = actor_current_resource
     return actor_resource if actor_resource.present?
@@ -348,7 +372,8 @@ module AuthenticationBase
 
   def log_in(resource, record_login_audit: true, token_kind_id: "BROWSER_WEB", require_totp_check: true,
              audit_context: {}, bootstrap_actor: false, skip_login_cooldown: false,
-             established_authentication_method: nil, authentication_context: nil)
+             established_authentication_method: nil, authentication_context: nil,
+             authentication_event_at: nil)
     return { status: :access_locked } if administratively_locked_resource?(resource)
     return { status: :login_forbidden } unless resource.login_allowed?
 
@@ -373,6 +398,7 @@ module AuthenticationBase
                   audit_context: audit_context, bootstrap_actor: bootstrap_actor,
                   established_authentication_method: established_authentication_method,
                   authentication_context: authentication_context,
+                  authentication_event_at: authentication_event_at,
       )
     end
   rescue ConcurrentSessionLimitExceededError
@@ -489,7 +515,8 @@ module AuthenticationBase
   end
 
   def issue_login_tokens_within_lock(resource, record_login_audit:, token_kind_id:, audit_context:, bootstrap_actor:,
-                                     established_authentication_method: nil, authentication_context: nil)
+                                     established_authentication_method: nil, authentication_context: nil,
+                                     authentication_event_at: nil)
     # Sign-up handoff must always issue an active token. If a rare data
     # condition (e.g. an orphan social_identity that resolves to a
     # session-saturated actor) made `session_limit_state_for` return
@@ -507,6 +534,7 @@ module AuthenticationBase
     return { status: dpop_result[:status], error: dpop_result[:error] } unless dpop_result[:status] == :success
 
     now = Time.current
+    authentication_event_at ||= now
     resolved_token_kind_id = resolve_token_kind_id(token_kind_id)
     token_status_id = is_restricted ? token_class::STATUS_RESTRICTED : token_class::STATUS_ACTIVE
     token_record = create_login_token_record(
@@ -516,6 +544,7 @@ module AuthenticationBase
       dpop_jkt: dpop_result[:jkt],
       established_authentication_method: established_authentication_method,
       authentication_context: authentication_context,
+      authentication_event_at: authentication_event_at,
     )
     device_session = ensure_device_session_for!(resource, token_record, dpop_jkt: dpop_result[:jkt])
     restricted_expires_at = is_restricted ? restricted_session_expires_at : nil
@@ -532,6 +561,7 @@ module AuthenticationBase
       token_kind_id: token_kind_id,
       dpop_jkt: dpop_result[:jkt],
       access_expires_at: access_expires_at,
+      authentication_event_at: authentication_event_at,
     )
 
     @current_resource = resource
@@ -2029,7 +2059,8 @@ module AuthenticationBase
   end
 
   def create_login_token_record(resource, token_kind_id, token_status_id: nil, dpop_jkt: nil,
-                                established_authentication_method: nil, authentication_context: nil)
+                                established_authentication_method: nil, authentication_context: nil,
+                                authentication_event_at: nil)
     token_record_connection_owner.connected_to(role: :writing) do
       token_attributes = { resource_foreign_key => resource.id }
       token_attributes[:dpop_jkt] = dpop_jkt if dpop_jkt.present?
@@ -2045,6 +2076,10 @@ module AuthenticationBase
       if established_authentication_method.present? &&
           token_class.column_names.include?("established_authentication_method")
         token_attributes[:established_authentication_method] = established_authentication_method
+      end
+
+      if authentication_event_at.present? && token_class.column_names.include?("authentication_event_at")
+        token_attributes[:authentication_event_at] = authentication_event_at
       end
 
       # The authentication context is the durable authority for Restricted Mode.
@@ -2469,7 +2504,8 @@ module AuthenticationBase
   # transition points.
   def establish_signed_in_session!(resource, pt:, ri:, auth_method:, token_kind_id: "BROWSER_WEB",
                                    record_login_audit: true, audit_context: {}, bootstrap_actor: false,
-                                   established_authentication_method: nil, authentication_context: nil)
+                                   established_authentication_method: nil, authentication_context: nil,
+                                   authentication_event_at: nil)
     raise AlreadyAuthenticatedError if logged_in?
 
     auth_method = auth_method.to_s
@@ -2491,6 +2527,7 @@ module AuthenticationBase
         bootstrap_actor: bootstrap_actor,
         established_authentication_method: resolved_established_authentication_method,
         authentication_context: authentication_context,
+        authentication_event_at: authentication_event_at,
       )
       advance_pending_sign_in_flow_after_primary!(cycle, resource, result)
       return result
@@ -2514,7 +2551,8 @@ module AuthenticationBase
 
   def pending_sign_in_result_after_primary!(resource, pt:, record_login_audit:, token_kind_id:,
                                             audit_context:, bootstrap_actor:, skip_login_cooldown: false,
-                                            established_authentication_method: nil, authentication_context: nil)
+                                            established_authentication_method: nil, authentication_context: nil,
+                                            authentication_event_at: nil)
     return { status: :login_forbidden } unless resource.login_allowed?
 
     session_limit_state = bootstrap_actor ? :within_limit : session_limit_state_for(resource)
@@ -2556,6 +2594,7 @@ module AuthenticationBase
       skip_login_cooldown: skip_login_cooldown,
       established_authentication_method: established_authentication_method,
       authentication_context: authentication_context,
+      authentication_event_at: authentication_event_at,
     )
     return result unless result[:status] == :success
 

@@ -8,8 +8,19 @@ import { describe, expect, it, vi } from "vitest";
 // The Cloudflare challenge does not exist outside a booted application, so the widget is stubbed to
 // what it renders; the ceremony itself is covered by its own spec.
 vi.mock("@/features/turnstile/TurnstileWidget", () => ({
-  default: ({ site_key: siteKey }: { site_key: string }) => (
-    <div data-turnstile-site-key={siteKey} />
+  default: ({
+    site_key: siteKey,
+    challenge_id: challengeId,
+  }: {
+    site_key: string;
+    challenge_id?: string | null;
+  }) => (
+    <div
+      data-turnstile-site-key={siteKey}
+      data-turnstile-challenge-id={challengeId ?? undefined}
+    >
+      <input name="cf-turnstile-response" />
+    </div>
   ),
 }));
 
@@ -38,6 +49,8 @@ const turnstile = {
   action: null,
   cdata: null,
 };
+
+const otpTurnstile = { ...turnstile, challenge_id: "challenge-1" };
 
 describe("auth/com sign-up entry screens", () => {
   const emailProps = {
@@ -132,6 +145,7 @@ describe("auth/com sign-up OTP screens", () => {
     delivery_help: "届かない場合は再送してください",
     error_heading: null,
     errors: [],
+    turnstile: otpTurnstile,
     return_link: { label: "登録方法に戻る", href: "/sign/up?ri=jp" },
   };
 
@@ -142,6 +156,9 @@ describe("auth/com sign-up OTP screens", () => {
     expect(markup).toContain('action="/sign/up/check/email/otp?ri=jp"');
     expect(markup).toContain('name="_method" value="patch"');
     expect(markup).toContain('name="visitor_email[pass_code]"');
+    expect(markup).toContain('data-turnstile-site-key="site-key"');
+    expect(markup).toContain('data-turnstile-challenge-id="challenge-1"');
+    expect(markup).toContain('name="cf-turnstile-response"');
     expect(markup).toContain("届かない場合は再送してください");
     expect(markup).toMatch(/<a href="\/sign\/up\?ri=jp"[^>]*>登録方法に戻る<\/a>/u);
   });
@@ -159,6 +176,18 @@ describe("auth/com sign-up OTP screens", () => {
 
     expect(markup).toContain('name="visitor_telephone[pass_code]"');
     expect(markup).toContain("認証コードが正しくありません");
+  });
+
+  it("leaves the email OTP input empty when rendering a previous error", () => {
+    const markup = renderToStaticMarkup(
+      <ComSignUpEmailEdit
+        {...otpProps}
+        errors={["認証コードが正しくありません"]}
+      />,
+    );
+
+    expect(markup).toContain('name="visitor_email[pass_code]"');
+    expect(markup).not.toContain('value="123456"');
   });
 
   it("lists validation messages without a heading when the server sent none", () => {

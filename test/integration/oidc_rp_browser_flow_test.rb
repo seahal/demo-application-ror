@@ -62,6 +62,7 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
             user: user,
             user_token_kind_id: ClientTokenKind::BROWSER_WEB,
             user_token_status_id: ClientTokenStatus::ACTIVE,
+            authentication_event_at: Time.current,
           )
         end
       current_session = tokens.second
@@ -135,9 +136,17 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
       ClientToken.where(user_id: user.id).delete_all
       email = user.client_emails.create!(address: "oidc_email_limit_#{SecureRandom.hex(4)}@example.com")
 
-      first_active = ClientToken.create!(user: user, user_token_status_id: ClientTokenStatus::ACTIVE)
+      first_active = ClientToken.create!(
+        user: user,
+        user_token_status_id: ClientTokenStatus::ACTIVE,
+        authentication_event_at: Time.current,
+      )
       first_active.rotate_refresh_token!
-      second_active = ClientToken.create!(user: user, user_token_status_id: ClientTokenStatus::ACTIVE)
+      second_active = ClientToken.create!(
+        user: user,
+        user_token_status_id: ClientTokenStatus::ACTIVE,
+        authentication_event_at: Time.current,
+      )
       second_active.rotate_refresh_token!
 
       host!(acme_host)
@@ -230,6 +239,7 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
         resource: user,
         client: OidcClientRegistry.find!("base-rails-rp"),
         nonce: session.fetch(:oidc_nonce),
+        auth_time: transaction.authenticated_at,
       )
       token_result = OidcRpTokenClient::Result.new(
         success: true,
@@ -260,8 +270,16 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
     user = clients(:one)
     other = clients(:two)
     ClientToken.where(user_id: [user.id, other.id]).delete_all
-    own_token = ClientToken.create!(user: user, user_token_status_id: ClientTokenStatus::ACTIVE)
-    other_token = ClientToken.create!(user: other, user_token_status_id: ClientTokenStatus::ACTIVE)
+    own_token = ClientToken.create!(
+      user: user,
+      user_token_status_id: ClientTokenStatus::ACTIVE,
+      authentication_event_at: Time.current,
+    )
+    other_token = ClientToken.create!(
+      user: other,
+      user_token_status_id: ClientTokenStatus::ACTIVE,
+      authentication_event_at: Time.current,
+    )
     issuance = issue_authenticated_app_oidc_transaction(user, auth_method: "email")
     resolution = ClientSessionLimitResolutionTransaction.issue_for_oidc!(
       actor: user,
@@ -286,7 +304,11 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
     acme_host = ENV.fetch("PUBLIC_BASE_SERVICE_URL", "base.app.localhost")
     user = clients(:one)
     ClientToken.where(user_id: user.id).delete_all
-    token = ClientToken.create!(user: user, user_token_status_id: ClientTokenStatus::ACTIVE)
+    token = ClientToken.create!(
+      user: user,
+      user_token_status_id: ClientTokenStatus::ACTIVE,
+      authentication_event_at: Time.current,
+    )
     issuance = issue_authenticated_app_oidc_transaction(user, auth_method: "email")
     resolution = ClientSessionLimitResolutionTransaction.issue_for_oidc!(
       actor: user,
@@ -324,7 +346,11 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
     acme_host = ENV.fetch("PUBLIC_BASE_SERVICE_URL", "base.app.localhost")
     user = clients(:one)
     ClientToken.where(user_id: user.id).delete_all
-    token = ClientToken.create!(user: user, user_token_status_id: ClientTokenStatus::ACTIVE)
+    token = ClientToken.create!(
+      user: user,
+      user_token_status_id: ClientTokenStatus::ACTIVE,
+      authentication_event_at: Time.current,
+    )
 
     host! acme_host
     patch acme_app_sign_in_limitation_path,
@@ -526,6 +552,7 @@ class OidcRpBrowserFlowTest < ActionDispatch::IntegrationTest
         actor: user,
         session_ref: SecureRandom.hex(16),
         auth_method: auth_method,
+        authentication_event_at: Time.current,
       )
     end
   end
@@ -983,6 +1010,7 @@ class OidcRpBrowserFlowTest
       user_token_status_id: ClientTokenStatus::ACTIVE,
       user_token_binding_method_id: ClientTokenBindingMethod::LEGACY,
       user_token_dbsc_status_id: ClientTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     base.merge(
@@ -1007,6 +1035,7 @@ class OidcRpBrowserFlowTest
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       staff_token_binding_method_id: OperatorTokenBindingMethod::LEGACY,
       staff_token_dbsc_status_id: OperatorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     base.merge(
@@ -1031,6 +1060,7 @@ class OidcRpBrowserFlowTest
       visitor_token_status_id: VisitorTokenStatus::ACTIVE,
       visitor_token_binding_method_id: VisitorTokenBindingMethod::LEGACY,
       visitor_token_dbsc_status_id: VisitorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     base.merge(

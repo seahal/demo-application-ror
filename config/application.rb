@@ -8,6 +8,17 @@ require "rails/all"
 
 Bundler.require(*Rails.groups)
 
+# `pghero` and `blazer` are `group :development` gems with `require: false` (Gemfile), so
+# Bundler.require never auto-requires them and the gems are not on the load path outside
+# development. They must be required here rather than from config/initializers: an engine only
+# contributes its own config/routes.rb through the `add_routing_paths` initializer, which has
+# already run by the time config/initializers/* are loaded, so a late require leaves the engine
+# mounted with an empty route set and every request 404s past it.
+if Rails.env.development?
+  require "pghero"
+  require "blazer"
+end
+
 require_relative "../lib/jit_security_active_record_encryption_key_provider"
 require_relative "../lib/app_config_loader"
 require_relative "../lib/trusted_forwarded_headers"

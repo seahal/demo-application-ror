@@ -118,6 +118,7 @@ class BaseOauthAuthorizationSurfacesTest < ActionDispatch::IntegrationTest
     result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
       surface: "com", login_challenge: issuance.transaction.login_challenge,
       actor: visitors(:reserved_visitor), session_ref: "com-resume-session", auth_method: "passkey",
+      authentication_event_at: Time.current,
     )
 
     get base_com_oauth_authorization_url(host: host, result: result.code),
@@ -141,6 +142,7 @@ class BaseOauthAuthorizationSurfacesTest < ActionDispatch::IntegrationTest
     result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
       surface: "org", login_challenge: issuance.transaction.login_challenge,
       actor: operators(:one), session_ref: "org-resume-session", auth_method: "passkey",
+      authentication_event_at: Time.current,
     )
 
     get base_org_oauth_authorization_url(host: host, result: result.code),
@@ -195,6 +197,7 @@ class BaseOauthAuthorizationSurfacesTest < ActionDispatch::IntegrationTest
     result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
       surface: "com", login_challenge: issuance.transaction.login_challenge,
       actor: visitors(:reserved_visitor), session_ref: "com-expired-session", auth_method: "passkey",
+      authentication_event_at: Time.current,
     )
 
     travel 2.seconds do
@@ -215,6 +218,7 @@ class BaseOauthAuthorizationSurfacesTest < ActionDispatch::IntegrationTest
     result = BaseAuthAdmissionCoordinator.register_result_and_issue_resume!(
       surface: "org", login_challenge: issuance.transaction.login_challenge,
       actor: operators(:one), session_ref: "org-expired-session", auth_method: "passkey",
+      authentication_event_at: Time.current,
     )
 
     travel 2.seconds do

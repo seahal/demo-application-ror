@@ -25,6 +25,8 @@ class OidcIdTokenVerifier < ApplicationService
     canonical_audience = validate_audience!(payload)
     return failure("nonce_mismatch") unless secure_equal?(payload["nonce"], expected_nonce)
 
+    validate_authentication_time!(payload)
+
     Result.new(success: true, payload: payload, canonical_audience: canonical_audience, error: nil)
   rescue JWT::DecodeError, JWT::VerificationError, OpenSSL::PKey::PKeyError, ArgumentError, TypeError
     failure("invalid_id_token")
@@ -69,5 +71,15 @@ class OidcIdTokenVerifier < ApplicationService
     raise ArgumentError, "invalid audience value" unless secure_equal?(canonical_audience, client_id)
 
     canonical_audience
+  end
+
+  def validate_authentication_time!(payload)
+    raw = payload["auth_time"]
+    return if raw.blank?
+
+    authentication_time = raw.is_a?(Numeric) ? raw.to_f : Float(raw)
+    raise ArgumentError, "invalid auth_time" unless authentication_time.finite?
+    raise ArgumentError, "auth_time is in the future" if authentication_time >
+      Time.current.to_f + AuthenticationJwtConfiguration.leeway_seconds
   end
 end

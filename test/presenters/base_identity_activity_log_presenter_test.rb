@@ -47,6 +47,20 @@ class BaseIdentityActivityLogPresenterTest < ActiveSupport::TestCase
     assert_equal "Account created with Google", row.fetch(:activity)
   end
 
+  test "does not use persistence metadata as the activity occurrence time" do
+    activity = ActivityRecord.new(
+      event_id: ClientChronicleEvent::LOGIN_SUCCESS,
+      context: {},
+      occurred_at: nil,
+      created_at: Time.utc(2026, 9, 13, 9, 8),
+    )
+    presenter = Base::Identity::ActivityLogPresenter.new(surface: :app)
+
+    row = I18n.with_locale(:en) { presenter.present(activity) }
+
+    assert_nil row.fetch(:occurred_at)
+  end
+
   test "risk ordering is explicit and refresh success stays internal independently of risk" do
     presenter = Base::Identity::ActivityLogPresenter.new(surface: :app)
     refresh = ActivityRecord.new(

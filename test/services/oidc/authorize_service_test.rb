@@ -10,6 +10,7 @@ class OidcAuthorizeCoordinatorTest < ActiveSupport::TestCase
   setup do
     @user = clients(:one)
     @user_session_token = ClientToken.create!(user: @user)
+    @authentication_event_at = Time.utc(2026, 1, 2, 3, 4, 5)
     @code_verifier = SecureRandom.urlsafe_base64(32)
     @code_challenge = Base64.urlsafe_encode64(
       Digest::SHA256.digest(@code_verifier),
@@ -267,6 +268,18 @@ class OidcAuthorizeCoordinatorTest < ActiveSupport::TestCase
     assert_equal @code_challenge, payload.fetch("code_challenge")
     assert_equal "S256", payload.fetch("code_challenge_method")
     assert_equal "issued", payload.fetch("state")
+  end
+
+  test "refuses authorization-code issuance when the authentication event time is absent" do
+    result = authorize_service_call(
+      params: valid_params,
+      resource: @user,
+      authentication_event_at: nil,
+    )
+
+    assert_not result.success?
+    assert_equal "invalid_request", result.error
+    assert_equal "authentication event time is required", result.error_description
   end
 
   # --- Operator OIDC tests ---
@@ -530,13 +543,16 @@ class OidcAuthorizeCoordinatorTest < ActiveSupport::TestCase
     Visitor.create!
   end
 
-  def authorize_service_call(params:, resource:, session_token: nil, **)
+  def authorize_service_call(
+    params:, resource:, session_token: nil, authentication_event_at: @authentication_event_at, **
+  )
     session_token ||= default_session_token_for(resource)
 
     OidcAuthorizeCoordinator.call(
       params: params,
       resource: resource,
       session_token: session_token,
+      authentication_event_at: authentication_event_at,
       **,
     )
   end

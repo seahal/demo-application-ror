@@ -48,13 +48,14 @@ class OidcAuthorizationTransactionCoordinator < ApplicationService
     end
 
     def register_result!(surface:, login_challenge:, actor:, session_ref:, auth_method:, acr: nil,
-                         now: Time.current)
+                         authentication_event_at: nil, now: Time.current)
       transaction = find_by_login_challenge!(surface: surface, login_challenge: login_challenge)
       transaction = transaction.register_authentication!(
         actor_ref: actor.public_id,
         session_ref: session_ref,
         auth_method: auth_method,
         acr: acr,
+        authentication_event_at: authentication_event_at,
         now: now,
       )
       Issuance.new(transaction: transaction, resume_url: transaction.acme_resume_url)

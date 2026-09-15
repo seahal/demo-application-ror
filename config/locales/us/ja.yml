@@ -2175,6 +2175,9 @@ ja:
             ignore_instruction: 心当たりがない場合は、このメールを無視してください。
             instruction: 以下の確認コードを使用して、登録を完了してください：
             subject: 確認コードのお知らせ
+            subjects:
+              sign_in: UMAXICA - サインインを確認してください
+              sign_up: UMAXICA - メールアドレスを確認してください
             title: メールアドレスの確認
             verify_link: メールアドレスを確認する
       com:
@@ -2184,6 +2187,9 @@ ja:
             ignore_instruction: 心当たりがない場合は、このメールを無視してください。
             instruction: 以下の確認コードを使用して、手続きを続行してください：
             subject: 確認コードのお知らせ
+            subjects:
+              sign_in: UMAXICA - サインインを確認してください
+              sign_up: UMAXICA - メールアドレスを確認してください
             title: メールアドレスの確認
             verify_link: メールアドレスを確認する
       org:

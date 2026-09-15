@@ -81,6 +81,37 @@ class ValkeyAuthStateAuthorizationCodeStoreTest < ActiveSupport::TestCase
     assert_predicate mismatch, :mismatch?
   end
 
+  test "a consumed code with mismatched ownership fields is not classified as replay" do
+    raw = @store.issue!(
+      client_id: "core-app-rp",
+      redirect_uri: "https://core.umaxica.app/sign/in/callback",
+      subject: "sub-1",
+      code_challenge: "challenge",
+      code_challenge_method: "S256",
+      resource_type: "client",
+    )
+
+    consumed = @store.consume!(
+      raw_code: raw,
+      expected: {
+        client_id: "core-app-rp",
+        redirect_uri: "https://core.umaxica.app/sign/in/callback",
+      },
+    )
+
+    assert_predicate consumed, :success?
+
+    wrong_owner = @store.consume!(
+      raw_code: raw,
+      expected: {
+        client_id: "other-rp",
+        redirect_uri: "https://core.umaxica.app/sign/in/callback",
+      },
+    )
+
+    assert_predicate wrong_owner, :mismatch?
+  end
+
   test "concurrent consume has a single winner" do
     raw = @store.issue!(
       client_id: "core-app-rp",

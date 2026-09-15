@@ -107,7 +107,7 @@ class BaseAuthAdmissionCoordinator < ApplicationService
     end
 
     def register_result_and_issue_resume!(surface:, login_challenge:, actor:, session_ref:, auth_method:, acr: nil,
-                                          ceremony_session_ref: nil)
+                                          authentication_event_at: nil, ceremony_session_ref: nil)
       issuance = OidcAuthorizationTransactionCoordinator.register_result!(
         surface: surface,
         login_challenge: login_challenge,
@@ -115,6 +115,7 @@ class BaseAuthAdmissionCoordinator < ApplicationService
         session_ref: session_ref,
         auth_method: auth_method,
         acr: acr,
+        authentication_event_at: authentication_event_at,
       )
       issue_result!(transaction: issuance.transaction, ceremony_session_ref: ceremony_session_ref)
     end

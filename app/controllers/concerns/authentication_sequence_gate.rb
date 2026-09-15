@@ -528,6 +528,7 @@ module AuthenticationSequenceGate
       require_totp_check: false,
       audit_context: { auth_method: "session_limit_promotion" },
       bootstrap_actor: true,
+      authentication_event_at: current_authentication_event_at,
     )
     return false unless session_result[:status] == :success && current_session
 
@@ -568,6 +569,7 @@ module AuthenticationSequenceGate
       require_totp_check: false,
       audit_context: { auth_method: "oidc_session_limit_promotion" },
       bootstrap_actor: true,
+      authentication_event_at: current_authentication_event_at,
     )
     return nil unless session_result[:status] == :success && current_session
 
@@ -612,6 +614,7 @@ module AuthenticationSequenceGate
         session_ref: issued_session.public_id,
         auth_method: auth_method,
         acr: "aal1",
+        authentication_event_at: current_authentication_event_at,
       )
 
     session.delete(:oidc_authorization_login_challenge)

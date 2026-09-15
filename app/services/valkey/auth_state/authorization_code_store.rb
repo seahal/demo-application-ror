@@ -39,9 +39,6 @@ module Valkey
         if not ok or type(payload) ~= "table" then
           return {"corrupt", ""}
         end
-        if payload["state"] ~= "issued" then
-          return {"replay", current}
-        end
         local now = ARGV[1]
         if payload["expires_at"] and payload["expires_at"] <= now then
           return {"expired", current}
@@ -55,6 +52,9 @@ module Valkey
           if tostring(payload[field] or "") ~= expected then
             return {"mismatch", current}
           end
+        end
+        if payload["state"] ~= "issued" then
+          return {"replay", current}
         end
         payload["state"] = "consumed"
         payload["consumed_at"] = now

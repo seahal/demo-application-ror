@@ -32,6 +32,7 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
           user: @user,
           user_token_kind_id: ClientTokenKind::BROWSER_WEB,
           user_token_status_id: ClientTokenStatus::ACTIVE,
+          authentication_event_at: Time.current,
         )
       @current_session_id = current_session.id
       acme_headers = as_user_headers(@user, host: acme_host, session_public_id: current_session.public_id)
@@ -88,6 +89,7 @@ class SignAppOidcBrowserFlowTest < ActionDispatch::IntegrationTest
           nonce: authorize_query.fetch("nonce"),
           jwt_issuer_id: OidcIssuer.jwt_issuer_id_for_resource_type("client"),
           issuer: OidcIssuer.for_resource_type("client"),
+          auth_time: Time.iso8601(payload.fetch("auth_time")),
         )
         token_result = OidcRpTokenClient::Result.new(
           success: true,
@@ -562,6 +564,7 @@ class SignAppOidcBrowserFlowTest
       user_token_status_id: ClientTokenStatus::ACTIVE,
       user_token_binding_method_id: ClientTokenBindingMethod::LEGACY,
       user_token_dbsc_status_id: ClientTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     access_token = jwt_access_token_for(user, host: host, session_public_id: token.public_id, resource_type: "client")
     base.merge(
@@ -587,6 +590,7 @@ class SignAppOidcBrowserFlowTest
       staff_token_status_id: OperatorTokenStatus::ACTIVE,
       staff_token_binding_method_id: OperatorTokenBindingMethod::LEGACY,
       staff_token_dbsc_status_id: OperatorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     base
@@ -607,6 +611,7 @@ class SignAppOidcBrowserFlowTest
       visitor_token_status_id: VisitorTokenStatus::ACTIVE,
       visitor_token_binding_method_id: VisitorTokenBindingMethod::LEGACY,
       visitor_token_dbsc_status_id: VisitorTokenDbscStatus::NOTHING,
+      authentication_event_at: Time.current,
     )
     base["X-TEST-SESSION-PUBLIC-ID"] = session_public_id.presence || token.public_id
     base

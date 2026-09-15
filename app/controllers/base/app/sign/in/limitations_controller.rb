@@ -221,6 +221,7 @@ module Base
                 require_totp_check: false,
                 audit_context: { auth_method: "social_session_limitation" },
                 bootstrap_actor: true,
+                authentication_event_at: current_authentication_event_at,
               )
               return render_invalid_resolution unless login_result[:status] == :success
             end
@@ -241,6 +242,7 @@ module Base
               session_token: current_session,
               auth_method: @oidc_transaction.auth_method,
               acr: @oidc_transaction.acr,
+              authentication_event_at: @oidc_transaction.authenticated_at,
             )
 
             if result.success?

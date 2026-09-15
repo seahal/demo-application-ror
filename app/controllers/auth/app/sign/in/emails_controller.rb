@@ -123,6 +123,17 @@ module Auth
           def update
             start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
+            unless cloudflare_turnstile_validation["success"]
+              error = t("turnstile_error")
+              @user_email.errors.add(:base, error)
+              ensure_min_elapsed(start_time)
+
+              return respond_to do |format|
+                format.html { render_email_edit(status: :unprocessable_content) }
+                format.json { render json: { error: error }, status: :unprocessable_content }
+              end
+            end
+
             @user_email.pass_code = update_pass_code_params[:pass_code]
 
             unless @user_email.valid?
@@ -244,10 +255,14 @@ module Auth
               @user_email = find_existing_email_for_verification(state.id)
               return redirect_to_email_session_expired if @user_email.nil?
 
-              @otp_resend_state = SignInOtpResendState.issue(kind: :email, target: @user_email.address)
+              @otp_resend_state = SignInOtpResendState.issue(
+                kind: :email, target: @user_email.address, surface: :app,
+              )
             else
               @user_email = ClientEmail.new(address: state.address)
-              @otp_resend_state = SignInOtpResendState.issue(kind: :email, target: state.address)
+              @otp_resend_state = SignInOtpResendState.issue(
+                kind: :email, target: state.address, surface: :app,
+              )
             end
           end
 
@@ -290,6 +305,7 @@ module Auth
               OtpAdapter.for(surface: :app, channel: :email).deliver(
                 record: existing_email,
                 otp_code: otp_code,
+                purpose: :sign_in,
               )
             else
               # Dummy work to simulate OTP generation for timing attack protection

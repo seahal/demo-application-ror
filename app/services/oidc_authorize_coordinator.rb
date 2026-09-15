@@ -7,13 +7,14 @@ class OidcAuthorizeCoordinator < ApplicationService
       def success? = success
     end
 
-  def initialize(params:, resource:, session_token:, auth_method: nil, acr: nil)
+  def initialize(params:, resource:, session_token:, auth_method: nil, acr: nil, authentication_event_at: nil)
     super()
     @params = params
     @resource = resource
     @session_token = session_token
     @auth_method = auth_method
     @acr = acr
+    @authentication_event_at = authentication_event_at
   end
 
   def call
@@ -33,7 +34,7 @@ class OidcAuthorizeCoordinator < ApplicationService
 
   private
 
-  attr_reader :params, :resource, :session_token, :auth_method, :acr
+  attr_reader :params, :resource, :session_token, :auth_method, :acr, :authentication_event_at
 
   def validate_request!
     OidcAuthorizeRequestResolver.call(params: params, resource: resource)
@@ -47,6 +48,7 @@ class OidcAuthorizeCoordinator < ApplicationService
       session_token: session_token,
       auth_method: auth_method,
       acr: acr,
+      authentication_event_at: authentication_event_at,
     )
   end
 
